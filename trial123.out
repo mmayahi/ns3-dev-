@@ -1,0 +1,111 @@
+Waf: Entering directory `/home/meysam/ns-3-dev-wifiTwt/build'
+Waf: Leaving directory `/home/meysam/ns-3-dev-wifiTwt/build'
+Build commands will be stored in build/compile_commands.json
+'build' finished successfully (0.536s)
+
+Loop index is 123321
+simulationTime is 50
+multicastInterval_ms is 200
+enableTcpUplink is 1
+enableMulticast is 1
+TCP dataPeriod (seconds) is 0.33
+UDP dataRatebps_other bps is 3100000
+Configured Udp uplink interPacketInterval: 2 ms
+Node IDs:
+	P2P node0: 0
+	P2P node1 (TCP server): 12
+	AP: 0
+	PSM STA is: 1
+	Other STA0: 2
+	Other STA1: 3
+	Other STA2: 4
+	Other STA3: 5
+	Other STA4: 6
+	Other STA5: 7
+	Other STA6: 8
+	Other STA7: 9
+	Other STA8: 10
+	Other STA9: 11
+
+Slot and IFS durations:
+
+slot (us) = 20
+PIFS (us) = 30
+SIFS (us) = 10
+DIFS (us) = 50
+
+Positions:
+	otherSTA 0 : [16.7575, 22.1949, 0.0 ];
+	otherSTA 1 : [1.30826, 10.0032, 0.0 ];
+	otherSTA 2 : [-4.44038, 16.7666, 0.0 ];
+	otherSTA 3 : [-24.1858, -20.3792, 0.0 ];
+	otherSTA 4 : [-2.98587, -21.1317, 0.0 ];
+	otherSTA 5 : [20.8911, -4.6755, 0.0 ];
+	otherSTA 6 : [6.62925, 16.6873, 0.0 ];
+	otherSTA 7 : [6.1344, 22.1314, 0.0 ];
+	otherSTA 8 : [-11.3445, -24.9945, 0.0 ];
+	otherSTA 9 : [-18.9942, -9.73653, 0.0 ];
+
+PSM STA Data rate is 24824bps
+Client in otherSta 0 starts at 8.60685 seconds
+Client in otherSta 1 starts at 8.49557 seconds
+Client in otherSta 2 starts at 8.38159 seconds
+Client in otherSta 3 starts at 8.36907 seconds
+Client in otherSta 4 starts at 8.80661 seconds
+Client in otherSta 5 starts at 8.10089 seconds
+Client in otherSta 6 starts at 8.5848 seconds
+Client in otherSta 7 starts at 8.93904 seconds
+Client in otherSta 8 starts at 8.6261 seconds
+Client in otherSta 9 starts at 8.82195 seconds
+1s: Data received in previous second in Bytes	0 Bytes
+2s: Data received in previous second in Bytes	0 Bytes
+3s: Data received in previous second in Bytes	0 Bytes
+4s: Data received in previous second in Bytes	0 Bytes
+5s: Data received in previous second in Bytes	0 Bytes
+6s: Data received in previous second in Bytes	0 Bytes
+7s: Data received in previous second in Bytes	0 Bytes
+8s: Data received in previous second in Bytes	0 Bytes
+9s: Data received in previous second in Bytes	3072 Bytes
+10s: Data received in previous second in Bytes	3072 Bytes
+11s: Data received in previous second in Bytes	3072 Bytes
+12s: Data received in previous second in Bytes	3072 Bytes
+13s: Data received in previous second in Bytes	3072 Bytes
+14s: Data received in previous second in Bytes	3072 Bytes
+15s: Data received in previous second in Bytes	3072 Bytes
+16s: Data received in previous second in Bytes	3072 Bytes
+17s: Data received in previous second in Bytes	3072 Bytes
+18s: Data received in previous second in Bytes	3072 Bytes
+19s: Data received in previous second in Bytes	3072 Bytes
+20s: Data received in previous second in Bytes	3072 Bytes
+21s: Data received in previous second in Bytes	3072 Bytes
+22s: Data received in previous second in Bytes	3072 Bytes
+23s: Data received in previous second in Bytes	3072 Bytes
+24s: Data received in previous second in Bytes	3072 Bytes
+25s: Data received in previous second in Bytes	4096 Bytes
+26s: Data received in previous second in Bytes	3072 Bytes
+27s: Data received in previous second in Bytes	2048 Bytes
+28s: Data received in previous second in Bytes	4096 Bytes
+29s: Data received in previous second in Bytes	3072 Bytes
+30s: Data received in previous second in Bytes	3072 Bytes
+31s: Data received in previous second in Bytes	3072 Bytes
+32s: Data received in previous second in Bytes	3072 Bytes
+33s: Data received in previous second in Bytes	3072 Bytes
+34s: Data received in previous second in Bytes	3072 Bytes
+35s: Data received in previous second in Bytes	2048 Bytes
+36s: Data received in previous second in Bytes	4096 Bytes
+37s: Data received in previous second in Bytes	3072 Bytes
+38s: Data received in previous second in Bytes	3072 Bytes
+39s: Data received in previous second in Bytes	3072 Bytes
+40s: Data received in previous second in Bytes	3072 Bytes
+41s: Data received in previous second in Bytes	3072 Bytes
+42s: Data received in previous second in Bytes	3072 Bytes
+43s: Data received in previous second in Bytes	3072 Bytes
+44s: Data received in previous second in Bytes	2048 Bytes
+45s: Data received in previous second in Bytes	4096 Bytes
+46s: Data received in previous second in Bytes	3072 Bytes
+47s: Data received in previous second in Bytes	3072 Bytes
+48s: Data received in previous second in Bytes	3072 Bytes
+49s: Data received in previous second in Bytes	3072 Bytes
+50s: Data received in previous second in Bytes	3072 Bytes
+
+Average throughput: 0.0212992 Mbit/s

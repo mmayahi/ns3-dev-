@@ -1,0 +1,124 @@
+Waf: Entering directory `/home/meysam/ns-3-dev-wifiTwt/build'
+Waf: Leaving directory `/home/meysam/ns-3-dev-wifiTwt/build'
+Build commands will be stored in build/compile_commands.json
+'build' finished successfully (0.619s)
+IP to MAC mapping:
+10.0.0.2 => 00:00:00:00:00:04
+10.0.0.3 => 00:00:00:00:00:05
+
+onTimeString = ns3::ConstantRandomVariable[Constant=7.38018e-05]
+OffTimeString = ns3::ConstantRandomVariable[Constant=0.0499262]
+-----------------
+
+Flow Level Stats:
+-----------------
+
+  Avg. Delay ( us/pkt): 1626 us/pkt
+Flow ID                       :	1
+Source IP and Port            :	10.0.0.2 , 49153
+Source STA MAC                :	00:00:00:00:00:40
+Destination IP and Port       :	10.1.1.2 , 50000
+Throughput (kbps)             :	275.023
+Total bits received           :	8.23978e+06
+Avg. Delay ( us/pkt)          :	1626 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1617 us/pkt
+Flow ID                       :	2
+Source IP and Port            :	10.0.0.3 , 49153
+Source STA MAC                :	00:00:00:00:00:50
+Destination IP and Port       :	10.1.1.2 , 50000
+Throughput (kbps)             :	275.025
+Total bits received           :	8.23978e+06
+Avg. Delay ( us/pkt)          :	1617 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1113 us/pkt
+Flow ID                       :	3
+Source IP and Port            :	10.1.1.2 , 50000
+Destination IP and Port       :	10.0.0.3 , 49153
+Destination STA MAC           :	00:00:00:00:00:50
+Throughput (kbps)             :	12.7115
+Total bits received           :	380672
+Avg. Delay ( us/pkt)          :	1113 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1113 us/pkt
+Flow ID                       :	4
+Source IP and Port            :	10.1.1.2 , 50000
+Destination IP and Port       :	10.0.0.2 , 49153
+Destination STA MAC           :	00:00:00:00:00:40
+Throughput (kbps)             :	12.7128
+Total bits received           :	380672
+Avg. Delay ( us/pkt)          :	1113 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1590 us/pkt
+Flow ID                       :	5
+Source IP and Port            :	10.0.0.2 , 49154
+Source STA MAC                :	00:00:00:00:00:40
+Destination IP and Port       :	10.1.1.2 , 50000
+Throughput (kbps)             :	273.43
+Total bits received           :	8.14502e+06
+Avg. Delay ( us/pkt)          :	1590 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1598 us/pkt
+Flow ID                       :	6
+Source IP and Port            :	10.0.0.3 , 49154
+Source STA MAC                :	00:00:00:00:00:50
+Destination IP and Port       :	10.1.1.2 , 50000
+Throughput (kbps)             :	273.433
+Total bits received           :	8.14502e+06
+Avg. Delay ( us/pkt)          :	1598 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1089 us/pkt
+Flow ID                       :	7
+Source IP and Port            :	10.1.1.2 , 50000
+Destination IP and Port       :	10.0.0.3 , 49154
+Destination STA MAC           :	00:00:00:00:00:50
+Throughput (kbps)             :	12.6293
+Total bits received           :	376096
+Avg. Delay ( us/pkt)          :	1089 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1090 us/pkt
+Flow ID                       :	8
+Source IP and Port            :	10.1.1.2 , 50000
+Destination IP and Port       :	10.0.0.2 , 49154
+Destination STA MAC           :	00:00:00:00:00:40
+Throughput (kbps)             :	12.6293
+Total bits received           :	376096
+Avg. Delay ( us/pkt)          :	1090 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+Node ID: [1] Data Tx time: 0.914232 ;
+Node ID: [0] Data Rx time: 0.944852 ;
+
+Average throughput: 0.991505 Mbit/s
+
+End of simulation (31s) Total energy consumed by STA radio = 40.2877J
+End of simulation (31s) Total energy consumed by STA radio = 40.2874J
+End of simulation (31s) Total energy consumed by AP radio = 208.213J
+all Tx time: 0.980824
+all Rx time: 0.948412
+all Idle time: 28.515
+all CCA_BUSY time: 0.552209
+all Sleep time: 0

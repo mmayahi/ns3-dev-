@@ -1,0 +1,51 @@
+Waf: Entering directory `/home/meysam/ns-3-dev-wifiTwt/build'
+Waf: Leaving directory `/home/meysam/ns-3-dev-wifiTwt/build'
+Build commands will be stored in build/compile_commands.json
+'build' finished successfully (0.611s)
+IP to MAC mapping:
+10.0.0.2 => 00:00:00:00:00:04
+10.0.0.3 => 00:00:00:00:00:05
+
+onTimeString = ns3::ConstantRandomVariable[Constant=7.38018e-05]
+OffTimeString = ns3::ConstantRandomVariable[Constant=0.0499262]
+-----------------
+
+Flow Level Stats:
+-----------------
+
+  Avg. Delay ( us/pkt): 1590 us/pkt
+Flow ID                       :	1
+Source IP and Port            :	10.0.0.2 , 49153
+Source STA MAC                :	00:00:00:00:00:40
+Destination IP and Port       :	10.1.1.2 , 9
+Throughput (kbps)             :	272.464
+Total bits received           :	7.88832e+06
+Avg. Delay ( us/pkt)          :	1590 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+  Avg. Delay ( us/pkt): 1591 us/pkt
+Flow ID                       :	2
+Source IP and Port            :	10.0.0.3 , 49153
+Source STA MAC                :	00:00:00:00:00:50
+Destination IP and Port       :	10.1.1.2 , 9
+Throughput (kbps)             :	272.461
+Total bits received           :	7.88832e+06
+Avg. Delay ( us/pkt)          :	1591 us/pkt
+Lost Packets                  :	0 pkts
+randSeed                      :	1
+-----------------
+
+Node ID: [1] Data Tx time: 0.420122 ;
+Node ID: [0] Data Rx time: 0.41631 ;
+
+Average throughput: 0.49862 Mbit/s
+End of simulation (31s) Total energy consumed by STA radio = 38.3473J
+End of simulation (31s) Total energy consumed by STA radio = 38.3474J
+End of simulation (31s) Total energy consumed by AP radio = 207.538J
+all Tx time: 0.4243
+all Rx time: 0.646922
+all Idle time: 29.7291
+all CCA_BUSY time: 0.193212
+all Sleep time: 0
