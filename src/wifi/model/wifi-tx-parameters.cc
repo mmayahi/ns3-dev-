@@ -116,7 +116,7 @@ WifiTxParameters::AddMpdu (Ptr<const WifiMacQueueItem> mpdu)
       m_info.emplace (hdr.GetAddr1 (),
                       PsduInfo {hdr, mpdu->GetPacketSize (), 0, seqNumbers});
       return;
-    }
+    } 
 
   // a PSDU for the receiver of the given MPDU is already being built
   NS_ASSERT_MSG ((hdr.IsQosData () && !hdr.HasData ()) || infoIt->second.amsduSize > 0,

@@ -372,6 +372,7 @@ WifiPhyStateHelper::SwitchToTx (Time txDuration, WifiConstPsduMap psdus, double 
   Time now = Simulator::Now ();
   switch (GetState ())
     {
+
     case WifiPhyState::RX:
       /* The packet which is being received as well
        * as its endRx event are cancelled by the caller.
@@ -389,6 +390,7 @@ WifiPhyStateHelper::SwitchToTx (Time txDuration, WifiConstPsduMap psdus, double 
     case WifiPhyState::IDLE:
       LogPreviousIdleAndCcaBusyStates ();
       break;
+      //NS_LOG_INFO("WifiPhyState" << GetState ());
     default:
       NS_FATAL_ERROR ("Invalid WifiPhy state.");
       break;

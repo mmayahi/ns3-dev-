@@ -1699,6 +1699,7 @@ void
 WifiPhy::Send (WifiConstPsduMap psdus, WifiTxVector txVector)
 {
   NS_LOG_FUNCTION (this << psdus << txVector);
+  //std::cout << Simulator::Now() << "  Send  " << psdus << "  for " << CalculateTxDuration (psdus, txVector, GetPhyBand ()) << std::endl;
   /* Transmission can happen if:
    *  - we are syncing on a packet. It is the responsibility of the
    *    MAC layer to avoid doing this but the PHY does nothing to
