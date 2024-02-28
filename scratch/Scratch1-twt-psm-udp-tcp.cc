@@ -814,8 +814,8 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
     // Simulator::Schedule (Seconds (0.7), &changeStaPSM, staMac, true);
     // Simulator::Schedule (Seconds (1.7), &changeStaPSM, staMac, true);
     Simulator::Schedule (Seconds (PSM_activation_time), &changeStaPSM, staMac, true);
-    Simulator::Schedule (Seconds (26.0), &changeStaPSM, staMac, false);
-    Simulator::Schedule (Seconds (27.0), &changeStaPSM, staMac, true);
+    //Simulator::Schedule (Seconds (26.0), &changeStaPSM, staMac, false);
+    //Simulator::Schedule (Seconds (27.0), &changeStaPSM, staMac, true);
   }
   
   // Simulator::Schedule (Seconds (2.1), &printStaPSM, staMac);
