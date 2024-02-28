@@ -413,7 +413,7 @@ TotalStaEnergy(double oldValue, double totalEnergy)
   
   
   // Random seed
-  uint32_t randSeed = 10;     
+  //uint32_t randSeed = 10;     
   //UDP flow - Uplink traffic only
   uint32_t uplinkpoissonDataRate = 20e3; // more than 111 Mbps uplink 
   uint32_t downlinkpoissonDataRate = 30e3; // more than 78 Mbps downlink 
@@ -435,16 +435,16 @@ main (int argc, char *argv[])
   thrpt <<"thrpt.log";
   std::fstream TH (thrpt.str ().c_str (), std::ios::app);
 
-  ovrhead_nrg <<FOLDER_PATH<<"ovrhead-nrg.log";
+  ovrhead_nrg <<"ovrhead-nrg.log";
   std::fstream ovr_NRG (ovrhead_nrg.str ().c_str (), std::ios::app);
 
-  enrgy <<FOLDER_PATH<<"nrg.log";
+  enrgy <<"nrg.log";
   std::fstream NRG (enrgy.str ().c_str (), std::ios::app);
 
-  dlay <<FOLDER_PATH<<"dlay.log";
+  dlay <<"dlay.log";
   std::fstream DLY (dlay.str ().c_str (), std::ios::app);
  
-  pcktloss <<FOLDER_PATH<<"pcktloss.log";
+  pcktloss <<"pcktloss.log";
   std::fstream PcktLoss (pcktloss.str ().c_str (), std::ios::app);
 
 
@@ -455,7 +455,7 @@ main (int argc, char *argv[])
   cmd.AddValue("power", "power save mechanism (1 for PSM, 2 for twt and 3 for active mode).", power);
   cmd.AddValue ("traffic", "traffic generator. 1: periodic traffic, 2:poisson traffic, 3: full buffer", traffic);
   cmd.AddValue ("udp", "UDP if set to 1, TCP otherwise", udp);
-  cmd.AddValue ("randSeed", "Random seed to initialize position and app start times - unit32", randSeed);
+  //cmd.AddValue ("randSeed", "Random seed to initialize position and app start times - unit32", randSeed);
   cmd.AddValue ("StaCount", "Number of other STAs. Integer between 0 and 100", StaCount);
   cmd.AddValue ("simulationTime", "Simulation duration in seconds", simulationTime);
   //cmd.AddValue ("forcePeriodicTraffic", "if true, poisson is converted to predictable periodic traffic", forcePeriodicTraffic);
@@ -1400,7 +1400,7 @@ if (enableFlowMon)
       //lostPackets = totalBitsRx/totalBitsRx;
       std::cout<< std::setw(30)<<std::left << "Avg. Delay ( us/pkt)" <<":\t"<< avgDelayMicroSPerPkt << " us/pkt\n";
       std::cout<< std::setw(30)<<std::left << "Lost Packets" <<":\t"<< lostPackets << " pkts\n";
-      std::cout<<std::setw(30) << std::left << "randSeed" << ":\t" << randSeed << std::endl;
+      //std::cout<<std::setw(30) << std::left << "randSeed" << ":\t" << randSeed << std::endl;
       
       // std::cout<<"\n\n";
       std::cout<<"-----------------\n\n";
@@ -1526,16 +1526,16 @@ if (enableFlowMon)
   double ap_throughput= sum_throughput_at_ap / StaCount;
   //flowmon.SerializeToXmlFile(("MU_logs/flomon.dat"), true, true);
 
-  TH << link << ", " << power << ", " << traffic << ", " << udp << ", " << randSeed << ", " << StaCount << ", " << average_sta_throughput/1000<< ", " << ap_throughput/1000<< std::endl;
+  TH << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << average_sta_throughput/1000<< ", " << ap_throughput/1000<< std::endl;
   
-  PcktLoss << link << ", " << power << ", " << traffic << ", " << udp << ", " << randSeed << ", " << StaCount << ", " << avr_ul_pkt_los<< ", " << avr_dl_pkt_los<< std::endl;
+  PcktLoss << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << avr_ul_pkt_los<< ", " << avr_dl_pkt_los<< std::endl;
   
-  DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << randSeed << ", " << StaCount << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
+  DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
 
   average_sta_energy = average_sta_energy/StaCount;
-  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << randSeed << ", " << StaCount << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
+  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
 
-  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << randSeed << ", " << StaCount << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
+  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
   
 
   allTxtime.clear(); //all transsmission time
