@@ -418,7 +418,7 @@ TotalStaEnergy(double oldValue, double totalEnergy)
   uint32_t uplinkpoissonDataRate = 20e3; // more than 111 Mbps uplink 
   uint32_t downlinkpoissonDataRate = 30e3; // more than 78 Mbps downlink 
 
-  bool udp = true; //transport protocol: true for udp and false for tcp
+  bool udp = 1; //transport protocol: true for udp and false for tcp
   uint32_t staMaxMissedBeacon = 10;                 // Set the max missed beacons for STA before attempt for reassociation
 
 Time AdvanceWakeupPS = MicroSeconds (10);
