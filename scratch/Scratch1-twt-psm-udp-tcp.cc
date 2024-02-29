@@ -875,7 +875,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
       Time delta = firstTwtSpOffsetFromBeacon + beaconInterval*ii/nextStaTwtSpOffsetDivider;
       
       // Time scheduleTwtAgreement = (firstTwtSpStart + ii*MilliSeconds(3));
-      Time scheduleTwtAgreement = (firstTwtSpStart + MilliSeconds(20) + ii*MilliSeconds(2));
+      Time scheduleTwtAgreement = (firstTwtSpStart + MilliSeconds(200) + ii*MilliSeconds(2));
       // Time scheduleTwtAgreement = (firstTwtSpStart);
       Time twtWakeInterval = twtWakeIntervalMultiplier*beaconInterval;
       Time twtNominalWakeDuration = beaconInterval/twtNominalWakeDurationDivider;
