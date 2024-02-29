@@ -88,7 +88,7 @@ bool enable_throughput_trace = false;
 bool enableEnergyTrace = false;  
 bool enablePSM_flag = false;
 //uint32_t PSM_activation_time = 3.0;     // to reproduce the bug please run with " % ./waf --run "scratch/Scratch1-twt-psm-udp-tcp --randSeed=20 --link=2 --power=1 --traffic=3 --udp=0 --StaCount=2" comman
-uint32_t PSM_activation_time = 3.1;
+uint32_t PSM_activation_time = 8.5;
 uint32_t link = 1; //communication link = 1: uplink, 2: downlink, 3: douplex 
 bool enablePhyStateTrace = true ;
 bool enableFlowMon = true;          // Enable flow monitor if true
@@ -103,7 +103,7 @@ bool poissonTraffic = false; //if true, predictable periodic is converted to pos
 Time beaconInterval = MicroSeconds(102400);  // 102.4 ms as beacon interval
 uint32_t packetsPerSecond = 2000;        // UL Packets per second per station
 Time firstTwtSpOffsetFromBeacon = MilliSeconds (3);    // Offset from beacon for first TWT SP
-Time firstTwtSpStart = (33 * beaconInterval);
+Time firstTwtSpStart = (83 * beaconInterval);
 double nextStaTwtSpOffsetDivider = 5;   // K, where nextStaTwtSpOffset = BI / K; K is double
 double twtWakeIntervalMultiplier = 1;    // K, where twtWakeInterval = BI * K; K is double
 double twtNominalWakeDurationDivider = 5;    // K, where twtNomimalWakeDuration = BI / K; K is double
@@ -875,7 +875,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
       Time delta = firstTwtSpOffsetFromBeacon + beaconInterval*ii/nextStaTwtSpOffsetDivider;
       
       // Time scheduleTwtAgreement = (firstTwtSpStart + ii*MilliSeconds(3));
-      Time scheduleTwtAgreement = (firstTwtSpStart + MilliSeconds(200) + ii*MilliSeconds(2));
+      Time scheduleTwtAgreement = (firstTwtSpStart + MilliSeconds(20) + ii*MilliSeconds(2));
       // Time scheduleTwtAgreement = (firstTwtSpStart);
       Time twtWakeInterval = twtWakeIntervalMultiplier*beaconInterval;
       Time twtNominalWakeDuration = beaconInterval/twtNominalWakeDurationDivider;
