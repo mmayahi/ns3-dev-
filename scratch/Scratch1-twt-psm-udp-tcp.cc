@@ -1334,8 +1334,8 @@ if (enableFlowMon)
       double totalBitsRx = i->second.rxBytes * 8.0;
       double totalBitsTx = i->second.txBytes * 8.0;
       double throughputKbps =  i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1000;
-      double avgDelayMicroSPerPkt = i->second.delaySum.GetMicroSeconds()/(i->second.rxPackets) ;
-      std::cout << "avgDelayMicroSPerPkt: " <<  avgDelayMicroSPerPkt << std::endl;
+      double avgDelayMicroSPerPkt = i->second.delaySum.GetMicroSeconds()/((i->second.rxPackets)+1) ;
+      //std::cout << "avgDelayMicroSPerPkt: " <<  avgDelayMicroSPerPkt << std::endl;
       double lostPackets = 0 ;
       lostPackets = (i->second.txBytes - i->second.rxBytes) / payloadSize;;
       double txPackets = (i->second.txPackets)/payloadSize;
