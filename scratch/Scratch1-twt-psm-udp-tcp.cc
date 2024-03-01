@@ -101,7 +101,7 @@ bool poissonTraffic = false; //if true, predictable periodic is converted to pos
 //uint32_t multicastPacketSizeBytes = 1024;
 //uint32_t multicastInterval_ms = 200;
 Time beaconInterval = MicroSeconds(102400);  // 102.4 ms as beacon interval
-uint32_t packetsPerSecond = 2000;        // UL Packets per second per station
+uint32_t packetsPerSecond = 10;        // UL Packets per second per station
 Time firstTwtSpOffsetFromBeacon = MilliSeconds (3);    // Offset from beacon for first TWT SP
 Time firstTwtSpStart = (83 * beaconInterval);
 double nextStaTwtSpOffsetDivider = 5;   // K, where nextStaTwtSpOffset = BI / K; K is double
@@ -208,13 +208,15 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 
 
 void callbackfunctions(){
- LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+   LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
-LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ //LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
- LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+//LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
- LogComponentEnable ("MultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ //LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+
+ //LogComponentEnable ("MultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
 }
 
@@ -425,7 +427,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{3};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 
 int
 main (int argc, char *argv[])
@@ -455,7 +457,7 @@ main (int argc, char *argv[])
   cmd.AddValue("power", "power save mechanism (1 for PSM, 2 for twt and 3 for active mode).", power);
   cmd.AddValue ("traffic", "traffic generator. 1: periodic traffic, 2:poisson traffic, 3: full buffer", traffic);
   cmd.AddValue ("udp", "UDP if set to 1, TCP otherwise", udp);
-  //cmd.AddValue ("randSeed", "Random seed to initialize position and app start times - unit32", randSeed);
+  cmd.AddValue ("packetsPerSecond", "UL/DL Packets per second per STA/AP", packetsPerSecond);
   cmd.AddValue ("StaCount", "Number of other STAs. Integer between 0 and 100", StaCount);
   cmd.AddValue ("simulationTime", "Simulation duration in seconds", simulationTime);
   //cmd.AddValue ("forcePeriodicTraffic", "if true, poisson is converted to predictable periodic traffic", forcePeriodicTraffic);
@@ -864,7 +866,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
   // std::cout<<"Ap MAC:"<<apMac<<"\n";
   if (enableTwt)
   {
-    for (u_int32_t ii = 0; ii < staWiFiDevice.GetN() ; ii++)
+    for (u_int32_t ii = 0; ii < StaCount ; ii++)
     {
       // Setting up TWT for Sta Mac
       //Ptr<Node> staWifiNode = StaNodes.Get(ii);
@@ -1041,11 +1043,11 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
     //Poisson Traffic
     // On time = payload size in bytes * 8/ data rate = 1434*8/100Mbps = 0.00011472 seconds
     double onTime = 1.0*payloadSize * 8.0/(1.0*uplinkpoissonDataRate);
-    //NS_LOG_UNCOND ("ON time: " << onTime);
+    NS_LOG_UNCOND ("ON time: " << onTime);
         // Off time nean = (Beacon Interval /nPacketsPerBI) - OnTime
         // double offTimeMean = (beaconInterval.GetMicroSeconds()/(packetCountPerBeaconPeriod*1.0e6)) - onTime; 
         double offTimeMean = abs(((1.0)/(packetsPerSecond*1.0)) - onTime) ; 
-        //NS_LOG_UNCOND ("Off time mean: " << offTimeMean);
+        NS_LOG_UNCOND ("Off time mean: " << offTimeMean);
         // std::cout<<"\nonTime="<<onTime;
         // std::cout<<"\noffTimeMean="<<offTimeMean;
 
@@ -1253,7 +1255,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-//Simulator::Schedule(Seconds(26.0), &callbackfunctions);
+//Simulator::Schedule(Seconds(8.0), &callbackfunctions);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
@@ -1526,16 +1528,16 @@ if (enableFlowMon)
   double ap_throughput= sum_throughput_at_ap / StaCount;
   //flowmon.SerializeToXmlFile(("MU_logs/flomon.dat"), true, true);
 
-  TH << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << average_sta_throughput/1000<< ", " << ap_throughput/1000<< std::endl;
+  TH << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << average_sta_throughput/1000<< ", " << ap_throughput/1000<< std::endl;
   
-  PcktLoss << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << avr_ul_pkt_los<< ", " << avr_dl_pkt_los<< std::endl;
+  PcktLoss << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << avr_ul_pkt_los<< ", " << avr_dl_pkt_los<< std::endl;
   
-  DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
+  DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
 
   average_sta_energy = average_sta_energy/StaCount;
-  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
+  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
 
-  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
+  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
   
 
   allTxtime.clear(); //all transsmission time

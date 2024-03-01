@@ -85,7 +85,7 @@ Time keepTrackOfEnergyFrom_S = Seconds (10); // Start time for current logging i
 
 
 // Network configuration -------------------------
-std::size_t nStations {1};              // number of TWT/PS stations
+std::size_t nStations {2};              // number of TWT/PS stations
 double simulationTime {10 + 5};        //seconds  - 10 seconds for setup
 double roomLength = 10.0;               // 2D room - side length in meters
 uint32_t p2pLinkDelay {0};              //p2p link delay in ms -- RTT will be double of this
@@ -971,9 +971,12 @@ int main (int argc, char *argv[])
       {
         // On time = payload size in bytes * 8/ data rate = 1434*8/100Mbps = 0.00011472 seconds
         double onTime = 1.0*poissonPayloadSize * 8.0/(1.0*poissonDataRate);
+           // NS_LOG_UNCOND ("ON time: " << onTime);
+
         // Off time nean = (Beacon Interval /nPacketsPerBI) - OnTime
         // double offTimeMean = (beaconInterval.GetMicroSeconds()/(packetCountPerBeaconPeriod*1.0e6)) - onTime; 
         double offTimeMean = ((1.0)/(packetsPerSecond*1.0)) - onTime; 
+        //NS_LOG_UNCOND ("Off time mean: " << offTimeMean);
 
         // std::cout<<"\nonTime="<<onTime;
         // std::cout<<"\noffTimeMean="<<offTimeMean;
