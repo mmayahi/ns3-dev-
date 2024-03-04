@@ -390,7 +390,7 @@ WifiPhyStateHelper::SwitchToTx (Time txDuration, WifiConstPsduMap psdus, double 
     case WifiPhyState::IDLE:
       LogPreviousIdleAndCcaBusyStates ();
       break;
-      //NS_LOG_INFO("WifiPhyState" << GetState ());
+      NS_LOG_INFO("WifiPhyState" << GetState ());
     default:
       NS_FATAL_ERROR ("Invalid WifiPhy state.");
       break;

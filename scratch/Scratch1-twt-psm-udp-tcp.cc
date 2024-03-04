@@ -88,7 +88,7 @@ bool enable_throughput_trace = false;
 bool enableEnergyTrace = false;  
 bool enablePSM_flag = false;
 //uint32_t PSM_activation_time = 3.0;     // to reproduce the bug please run with " % ./waf --run "scratch/Scratch1-twt-psm-udp-tcp --randSeed=20 --link=2 --power=1 --traffic=3 --udp=0 --StaCount=2" comman
-uint32_t PSM_activation_time = 8.5;
+uint32_t PSM_activation_time = 1.5;
 uint32_t link = 1; //communication link = 1: uplink, 2: downlink, 3: douplex 
 bool enablePhyStateTrace = true ;
 bool enableFlowMon = true;          // Enable flow monitor if true
@@ -208,8 +208,8 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 
 
 void callbackfunctions(){
-   LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-
+  // LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("WifiTxParameters", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
 //LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
@@ -427,7 +427,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{3};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 
 int
 main (int argc, char *argv[])
@@ -636,6 +636,8 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 // LogComponentEnable ("TcpSocketBase", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("TcpSocket", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  // LogComponentEnable ("OnOffApplication", LogLevel(LOG_PREFIX_ALL | LOG_LEVEL_INFO));
+// LogComponentEnable ("WifiTxParameters", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+
 
   //*******************************************************
   //Time interPacketIntervalUdp = Seconds (double (udpUplinkPacketSizeBits)/double(dataRatebps_other));
@@ -1130,15 +1132,15 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
         clientApp.Stop (Seconds (simulationTime + 1));
         }
         sinkApps.Add(tempsinkApp);
-
+        
         //ping the server(10.1.1.1) from all STAs
         V4PingHelper ping = V4PingHelper (P2PInterfaces.GetAddress (1));
         ApplicationContainer pinger = ping.Install(StaNodes);
         pinger.Start (Seconds (0.1));
         pinger.Stop (Seconds (1.9));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
-}
-}
+      }
+    }
   Simulator::Schedule (Seconds (0), &Ipv4GlobalRoutingHelper::PopulateRoutingTables);
 
 
@@ -1255,7 +1257,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-//Simulator::Schedule(Seconds(8.0), &callbackfunctions);
+//Simulator::Schedule(Seconds(11.0), &callbackfunctions);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
