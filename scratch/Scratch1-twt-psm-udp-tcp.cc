@@ -664,10 +664,10 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   
 
   // In the NodeList remote server is the first /0/, AP is the second (/1/), following by the STAs ... 
-  NodeContainer serverNodes;                // This will be connected to AP by P2P links
+  /*NodeContainer serverNodes;                // This will be connected to AP by P2P links
   serverNodes.Create (1);     
   Ptr<Node> MainUDPServerNode = serverNodes.Get (0);
-
+*/
   NodeContainer ApNodes;
   ApNodes.Create (1);     // First node = STA
   Ptr<Node> apWifiNode = ApNodes.Get (0);
@@ -681,10 +681,10 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 
   // Setup P2P nodes
 
-  NodeContainer P2PNodes;
+  /*NodeContainer P2PNodes;
   P2PNodes.Add(ApNodes);
   P2PNodes.Add(MainUDPServerNode);
-
+*/
   // Printing Node IDs
   // forPrinting 
 /*  std::cout<<"\nNode IDs:\n";
@@ -698,7 +698,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   }
 */
 
-  PointToPointHelper pointToPoint;
+  /*PointToPointHelper pointToPoint;
   std::stringstream delayString;
   delayString<<P2PLinkDelay_ms <<"ms";
   pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("1000Mbps"));
@@ -706,7 +706,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 
   NetDeviceContainer P2Pdevices;
   P2Pdevices = pointToPoint.Install (P2PNodes);
-  /* Configure AP */
+  *//* Configure AP */
   /*
   wifiMac.SetType ("ns3::ApWifiMac",
                    "Ssid", SsidValue (ssid));
@@ -918,7 +918,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
   }
   
   
-  positionAlloc->Add (Vector (-100.0, 0.0, 0.0));
+  //positionAlloc->Add (Vector (-100.0, 0.0, 0.0));
 
   mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -928,7 +928,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
     mobility.Install (StaNodes);
   
   
-  mobility.Install(MainUDPServerNode);
+  //mobility.Install(MainUDPServerNode);
 
 
   /** Energy Model **/
@@ -978,7 +978,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
   /* Internet stack */
   InternetStackHelper stack;
   stack.Install (apWifiNode);
-  stack.Install (serverNodes);
+  //stack.Install (serverNodes);
   stack.Install (StaNodes);
 
   
@@ -991,10 +991,10 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
   staInterface = address.Assign (staWiFiDevice);
 
 
-  address.SetBase ("10.1.1.0", "255.255.255.0");
+  /*address.SetBase ("10.1.1.0", "255.255.255.0");
   Ipv4InterfaceContainer P2PInterfaces;
   P2PInterfaces = address.Assign (P2Pdevices);
-
+*/
   // // Printing MAC Addresses to console
   // std::cout<<"MAC Addresses:\n";
   // std::cout<<"\tP2P device 0: "<<P2Pdevices.Get(0)->GetAddress()<<std::endl;
@@ -1089,12 +1089,12 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
           {
           //UDP flow
           /* Install UDP Receiver on the P2P UDP server */
-          PacketSinkHelper sinkHelper ("ns3::UdpSocketFactory", InetSocketAddress ( P2PInterfaces.GetAddress (1), port));
+          PacketSinkHelper sinkHelper ("ns3::UdpSocketFactory", InetSocketAddress ( apInterface.GetAddress (0), port));
           ApplicationContainer tempsinkApp;
-          tempsinkApp = sinkHelper.Install (MainUDPServerNode);
+          tempsinkApp = sinkHelper.Install (apWifiNode);
           //sink = StaticCast<PacketSink> (sinkApp.Get (0));
           sinkApps.Start (Seconds (0.0));
-          OnOffHelper onoff ("ns3::UdpSocketFactory", (InetSocketAddress ( P2PInterfaces.GetAddress (1), port)));
+          OnOffHelper onoff ("ns3::UdpSocketFactory", (InetSocketAddress ( apInterface.GetAddress (0), port)));
           onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
           onoff.SetAttribute ("OffTime", StringValue (offTimeString));
           onoff.SetAttribute ("DataRate", DataRateValue (DataRate (uplinkstr)));
@@ -1107,7 +1107,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
           
         sinkApps.Add(tempsinkApp);
         //ping the server(10.1.1.1) from all STAs
-        V4PingHelper ping = V4PingHelper (P2PInterfaces.GetAddress (1));
+        V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
         ApplicationContainer pinger = ping.Install(StaNodes);
         pinger.Start (Seconds (0.1));
         pinger.Stop (Seconds (1.9));
@@ -1118,11 +1118,11 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
         {
         //TCP flow
         /* Install UDP Receiver on the P2P UDP server */
-        PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory",InetSocketAddress (P2PInterfaces.GetAddress(1), port));
+        PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory",InetSocketAddress (apInterface.GetAddress(0), port));
         ApplicationContainer tempsinkApp;
-        tempsinkApp = sinkHelper.Install (MainUDPServerNode);
+        tempsinkApp = sinkHelper.Install (apWifiNode);
         tempsinkApp.Start (Seconds (0.0));
-        OnOffHelper onoff ("ns3::TcpSocketFactory", InetSocketAddress (P2PInterfaces.GetAddress(1), port));
+        OnOffHelper onoff ("ns3::TcpSocketFactory", InetSocketAddress (apInterface.GetAddress(0), port));
         onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
         onoff.SetAttribute ("OffTime", StringValue (offTimeString));
         onoff.SetAttribute ("DataRate", DataRateValue (DataRate (uplinkstr)));
@@ -1135,7 +1135,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
         sinkApps.Add(tempsinkApp);
         
         //ping the server(10.1.1.1) from all STAs
-        V4PingHelper ping = V4PingHelper (P2PInterfaces.GetAddress (1));
+        V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
         ApplicationContainer pinger = ping.Install(StaNodes);
         pinger.Start (Seconds (0.1));
         pinger.Stop (Seconds (1.9));
@@ -1167,13 +1167,13 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
         onoff.SetAttribute ("OffTime", StringValue (offTimeString));
         onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
         onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-        ApplicationContainer clientApp = onoff.Install (MainUDPServerNode);
+        ApplicationContainer clientApp = onoff.Install (apWifiNode);
         clientApp.Start (Seconds(1 + randTime->GetValue()));
         clientApp.Stop (Seconds (simulationTime + 1));
         
         //ping the servers(10.0.0.*) from the remote server
         V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
-        ApplicationContainer pinger = ping.Install(MainUDPServerNode);
+        ApplicationContainer pinger = ping.Install(apWifiNode);
         pinger.Start (Seconds (0.2));
         pinger.Stop (Seconds (1.9));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
@@ -1193,14 +1193,14 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
         onoff.SetAttribute ("OffTime", StringValue (offTimeString));
         onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
         onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-        ApplicationContainer clientApp = onoff.Install (MainUDPServerNode);
+        ApplicationContainer clientApp = onoff.Install (apWifiNode);
         clientApp.Start (Seconds(1 +  randTime->GetValue()));
         clientApp.Stop (Seconds (simulationTime + 1));
 
 
         //ping the servers(10.0.0.*) from the remote server
         V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
-        ApplicationContainer pinger = ping.Install(MainUDPServerNode);
+        ApplicationContainer pinger = ping.Install(apWifiNode);
         pinger.Start (Seconds (0.2));
         pinger.Stop (Seconds (1.9));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
@@ -1224,8 +1224,6 @@ if (enable_throughput_trace){
       wifiPhy.EnablePcap (ss2.str(), staWiFiDevice);
       // ss3<<FOLDER_PATH<< LOGNAME_PREFIX <<"_otherSTA";
       // wifiPhy.EnablePcap (ss3.str(), otherStaWiFiDevices);
-      ss4<<FOLDER_PATH<< LOGNAME_PREFIX <<"_P2P";
-      pointToPoint.EnablePcapAll (ss4.str());
     }
 
 
@@ -1258,7 +1256,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-Simulator::Schedule(Seconds(8.0), &callbackfunctions);
+//Simulator::Schedule(Seconds(8.0), &callbackfunctions);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
@@ -1344,14 +1342,14 @@ if (enableFlowMon)
       double txPackets = (i->second.txPackets)/payloadSize;
       avgDelay_us[counter] = avgDelayMicroSPerPkt;
       delayHist[counter] = i->second.delayHistogram;
-      if (t.destinationAddress ==  P2PInterfaces.GetAddress (1) && t.destinationPort == 50000){
+      if (t.destinationAddress ==  apInterface.GetAddress (0) && t.destinationPort == 50000){
           std::cout <<std::setw(30)<<std::left <<"Flow ID" <<":\t"<<i->first<< " -> UpLink Data stream\n";
           sum_uplink_delay += avgDelayMicroSPerPkt ;          
           sum_uplink_packet_lost += lostPackets;
           sum_uplink_tx_packet += txPackets;
           sum_throughput_at_ap += throughputKbps;
       }
-       else if (t.sourceAddress ==  P2PInterfaces.GetAddress (1) && t.sourcePort == 50000){
+       else if (t.sourceAddress ==  apInterface.GetAddress (0) && t.sourcePort == 50000){
           std::cout <<std::setw(30)<<std::left <<"Flow ID" <<":\t"<<i->first<< " -> UpLink Control stream\n";
         }
       else{
