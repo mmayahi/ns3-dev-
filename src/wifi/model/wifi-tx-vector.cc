@@ -118,6 +118,7 @@ WifiTxVector::GetMode (uint16_t staId) const
   if (IsMu ())
     {
       NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU (" << staId << ")");
+                //std::cout<<" staId "<<staId <<std::endl;
       NS_ASSERT (m_muUserInfos.find (staId) != m_muUserInfos.end ());
       return m_muUserInfos.at (staId).mcs;
     }

@@ -738,6 +738,7 @@ FrameExchangeManager::SendNormalAck (const WifiMacHeader& hdr, const WifiTxVecto
 {
   NS_LOG_FUNCTION (this << hdr << dataTxVector << dataSnr);
  
+  NS_LOG_DEBUG(" GetAckTxVector:: GetStaId (to, dataTxVector) "<< hdr.GetAddr2 () );
 
   WifiTxVector ackTxVector = m_mac->GetWifiRemoteStationManager ()->GetAckTxVector (hdr.GetAddr2 (), dataTxVector);
   WifiMacHeader ack;

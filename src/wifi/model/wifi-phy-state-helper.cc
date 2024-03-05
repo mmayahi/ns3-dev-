@@ -359,12 +359,12 @@ WifiPhyStateHelper::LogPreviousIdleAndCcaBusyStates (void)
 
 void
 WifiPhyStateHelper::SwitchToTx (Time txDuration, WifiConstPsduMap psdus, double txPowerDbm, WifiTxVector txVector)
-{
+{           
   NS_LOG_FUNCTION (this << txDuration << psdus << txPowerDbm << txVector);
   if (!m_txTrace.IsEmpty ())
     {
       for (auto const& psdu : psdus)
-        {
+        { 
           m_txTrace (psdu.second->GetPacket (), txVector.GetMode (psdu.first),
                      txVector.GetPreambleType (), txVector.GetTxPowerLevel ());
         }
