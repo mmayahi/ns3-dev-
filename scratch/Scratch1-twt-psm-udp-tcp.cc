@@ -88,7 +88,7 @@ bool enable_throughput_trace = false;
 bool enableEnergyTrace = false;  
 bool enablePSM_flag = false;
 //uint32_t PSM_activation_time = 3.0;     // to reproduce the bug please run with " % ./waf --run "scratch/Scratch1-twt-psm-udp-tcp --randSeed=20 --link=2 --power=1 --traffic=3 --udp=0 --StaCount=2" comman
-uint32_t PSM_activation_time = 8.5;
+uint32_t PSM_activation_time = 6.5;
 uint32_t link = 1; //communication link = 1: uplink, 2: downlink, 3: douplex 
 bool enablePhyStateTrace = true ;
 bool enableFlowMon = true;          // Enable flow monitor if true
