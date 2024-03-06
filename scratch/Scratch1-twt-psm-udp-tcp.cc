@@ -691,18 +691,31 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue (2));
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
-
-
-
   Ssid ssid = Ssid ("ns3-80211ax");
-if (enableTwt){
-  Config::SetDefault ("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
+
+  Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel> ();
+  SpectrumWifiPhyHelper wifiPhy;
+  wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
+  wifiPhy.SetChannel (spectrumChannel);
+  wifiPhy.Set ("ChannelSettings", StringValue ("{0, 20, BAND_2_4GHZ, 0}"));
+  if (enableTwt){
+    Config::SetDefault ("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
                           EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
-    
+  }
+
+  wifiMac.SetType ("ns3::StaWifiMac",
+              "BE_BlockAckThreshold", UintegerValue (1),  // If AMPDU is used, Block Acks will always be used regardless of this value
+              "Ssid", SsidValue (ssid));
+
+  NetDeviceContainer staWiFiDevice;
+
+  staWiFiDevice = wifiHelper.Install (wifiPhy, wifiMac, StaNodes);
+  if (enableTwt){
+  
   wifiMac.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
                                 "EnableUlOfdma", BooleanValue (true),
                                 "EnableBsrp", BooleanValue (true),
-                                "NStations", UintegerValue (StaCount)); //maxMuSta = 1 or StaCount
+                                "NStations", UintegerValue (1)); //maxMuSta = 1 or StaCount
   // std::cout<<"\nTwtRrMultiUserScheduler is selected\n";
     }
   wifiMac.SetType ("ns3::ApWifiMac",
@@ -715,46 +728,31 @@ if (enableTwt){
                 "BsrLifetime", TimeValue (MilliSeconds (bsrLife_ms)),
               "Ssid", SsidValue (ssid));
   
-  Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel> ();
-  SpectrumWifiPhyHelper wifiPhy;
-  wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-  wifiPhy.SetChannel (spectrumChannel);
-  wifiPhy.Set ("ChannelSettings", StringValue ("{0, 20, BAND_2_4GHZ, 0}"));
 
   apWiFiDevice = wifiHelper.Install (wifiPhy, wifiMac, apWifiNode);
-
-  wifiMac.SetType ("ns3::StaWifiMac",
-              "BE_BlockAckThreshold", UintegerValue (1),  // If AMPDU is used, Block Acks will always be used regardless of this value
-              "Ssid", SsidValue (ssid));
-
-  NetDeviceContainer staWiFiDevice;
-
-  staWiFiDevice = wifiHelper.Install (wifiPhy, wifiMac, StaNodes);
-
-
-  Ptr<WifiNetDevice> device = staWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
-  
-  Ptr<WifiMac> staMacTemp = device->GetMac ();
-  Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
-
 
 
 // Enable / disable PSM and sleep state using MAC attribute change - through a function - not directly changing the MAC attribute 
   if (enablePSM_flag)
   {
 
+  Ptr<WifiNetDevice> device = staWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
+  
+  Ptr<WifiMac> staMacTemp = device->GetMac ();
+  Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
+
     Simulator::Schedule (Seconds (PSM_activation_time), &changeStaPSM, staMac, true);
 
   }
   
-
+/*
   // IFS durations
   Ptr<WifiPhy> phy = device->GetPhy ();
   Time sifs = phy->GetSifs();    
   Time pifs = phy->GetPifs();    
   Time slot = phy->GetSlot();    
   Time difs = 2 * slot + sifs;     
- 
+ */
 // Changing attributes for STA
 Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons", UintegerValue(staMaxMissedBeacon));
 Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/AdvanceWakeupPS", TimeValue(AdvanceWakeupPS));
@@ -762,13 +760,13 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
 
 
   // ----------------------------------------------------------------------------
-
   // Setting up TWT
   Ptr<WifiNetDevice> apWifiDevice = apWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
   Ptr<WifiMac> apMacTemp = apWifiDevice->GetMac ();
   Ptr<ApWifiMac> apMac = DynamicCast<ApWifiMac> (apMacTemp);
   // Mac48Address apMacAddress = apMac->GetAddress();
   // std::cout<<"Ap MAC:"<<apMac<<"\n";
+
   if (enableTwt)
   {
     for (u_int32_t ii = 0; ii < StaCount ; ii++)
