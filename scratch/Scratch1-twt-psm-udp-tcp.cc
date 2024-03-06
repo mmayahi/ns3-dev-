@@ -217,7 +217,7 @@ void callbackfunctions(){
  //LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
  //LogComponentEnable ("MultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
- LogComponentEnable ("WifiRemoteStationManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ //LogComponentEnable ("WifiRemoteStationManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
 }
 
@@ -662,7 +662,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   yCoordinateRand->SetAttribute ("Max", DoubleValue (maxY));
 
   
-
   // In the NodeList remote server is the first /0/, AP is the second (/1/), following by the STAs ... 
   /*NodeContainer serverNodes;                // This will be connected to AP by P2P links
   serverNodes.Create (1);     
@@ -678,40 +677,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   StaNodes.Create (StaCount);
 
   
-
-  // Setup P2P nodes
-
-  /*NodeContainer P2PNodes;
-  P2PNodes.Add(ApNodes);
-  P2PNodes.Add(MainUDPServerNode);
-*/
-  // Printing Node IDs
-  // forPrinting 
-/*  std::cout<<"\nNode IDs:\n";
-  std::cout<<"\tP2P node0: "<<unsigned(P2PNodes.Get(0)->GetId())<<std::endl;
-  std::cout<<"\tP2P node1 (UDP server for PSM STA): "<<unsigned(P2PNodes.Get(1)->GetId())<<std::endl;
-  std::cout<<"\tAP: "<<unsigned(apWifiNode->GetId()) <<std::endl;
-  std::cout<<"\tPSM STA is: "<<unsigned(staWifiNode->GetId()) <<std::endl;
-  for (uint32_t ii = 0; ii < otherStaCount; ii++)
-  {
-    std::cout<<"\tOther STA"<<ii<<": "<<otherStaNodes.Get(ii)->GetId()<<std::endl;
-  }
-*/
-
-  /*PointToPointHelper pointToPoint;
-  std::stringstream delayString;
-  delayString<<P2PLinkDelay_ms <<"ms";
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("1000Mbps"));
-  pointToPoint.SetChannelAttribute ("Delay", StringValue (delayString.str()));
-
-  NetDeviceContainer P2Pdevices;
-  P2Pdevices = pointToPoint.Install (P2PNodes);
-  *//* Configure AP */
-  /*
-  wifiMac.SetType ("ns3::ApWifiMac",
-                   "Ssid", SsidValue (ssid));
-*/
-
 
   NetDeviceContainer apWiFiDevice;
 
@@ -730,12 +695,17 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 
 
   Ssid ssid = Ssid ("ns3-80211ax");
-      wifiMac.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
+if (enableTwt){
+  Config::SetDefault ("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
+                          EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
+    
+  wifiMac.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
                                 "EnableUlOfdma", BooleanValue (true),
                                 "EnableBsrp", BooleanValue (true),
-                                "NStations", UintegerValue (1)); //maxMuSta = 1
-
-    wifiMac.SetType ("ns3::ApWifiMac",
+                                "NStations", UintegerValue (StaCount)); //maxMuSta = 1 or StaCount
+  // std::cout<<"\nTwtRrMultiUserScheduler is selected\n";
+    }
+  wifiMac.SetType ("ns3::ApWifiMac",
               "EnableBeaconJitter", BooleanValue (false),
               "BE_BlockAckThreshold", UintegerValue (1),
                 // "BE_MaxAmsduSize", UintegerValue (7000),
@@ -762,50 +732,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   staWiFiDevice = wifiHelper.Install (wifiPhy, wifiMac, StaNodes);
 
 
-  // ---------------- To change DTIM and disable beacon jitter of AP
-  // Config path is "/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/DtimPeriod"
- // Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/DtimPeriod", UintegerValue(apDtimPeriod));
-
-  // ---------------- To change max queue size and delay of buffer for PS STAs at AP - does not work - note - shyam
- // Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferSize", QueueSizeValue(QueueSize ("678p")));
- // Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferDropDelay", TimeValue (MilliSeconds (1123)));
-
-
-
-  // Adding basic modes to AP - use this to change beacon data rates
-
- // Ptr<WifiRemoteStationManager> apStationManager = DynamicCast<WifiNetDevice>(apWiFiDevice.Get (0))->GetRemoteStationManager ();
-  //apStationManager->AddBasicMode (WifiMode ("ErpOfdmRate6Mbps"));
-  //DynamicCast<WifiNetDevice>(apWiFiDevice.Get (0))->GetRemoteStationManager ()->AddBasicMode (WifiMode ("ErpOfdmRate6Mbps"));
-
-  /* Configure STA */
-  // ssid = Ssid ("network1");     //Configuring with wrong SSID
- /* wifiMac.SetType ("ns3::StaWifiMac",
-                   "Ssid", SsidValue (ssid));
-
-  NetDeviceContainer staWiFiDevice;
-  staWiFiDevice = wifiHelper.Install (wifiPhy, wifiMac, staWifiNode);
-*/
-  /*NetDeviceContainer otherStaWiFiDevices;
-  if (otherStaCount > 0)
-  {
-    otherStaWiFiDevices = wifiHelper.Install (wifiPhy, wifiMac, otherStaNodes);
-  }
-  */
-  // RngSeedManager::SetSeed (1);
-  // RngSeedManager::SetRun (1);
-  // int64_t streamNumber = 1;
-  // streamNumber += wifiHelper.AssignStreams (apWiFiDevice, streamNumber);
-  // streamNumber += wifiHelper.AssignStreams (staWiFiDevice, streamNumber);
-  // streamNumber += wifiHelper.AssignStreams (otherStaWiFiDevices, streamNumber);
-
-
-
-  // Accessing the WifiPhy object and enabling sleep
-  // std::cout<<"Number of devices:"<<staWiFiDevice.GetN()<<std::endl;
-
-  // std::cout<<"STA Device:"<<staWiFiDevice.Get(0)<<std::endl;   // This returns a pointer to the NetDevice and not WifiNetDevice - does not work for all functions 
-
   Ptr<WifiNetDevice> device = staWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
   
   Ptr<WifiMac> staMacTemp = device->GetMac ();
@@ -816,20 +742,11 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 // Enable / disable PSM and sleep state using MAC attribute change - through a function - not directly changing the MAC attribute 
   if (enablePSM_flag)
   {
-    // Simulator::Schedule (Seconds (0.7), &changeStaPSM, staMac, true);
-    // Simulator::Schedule (Seconds (1.7), &changeStaPSM, staMac, true);
+
     Simulator::Schedule (Seconds (PSM_activation_time), &changeStaPSM, staMac, true);
-    //Simulator::Schedule (Seconds (26.0), &changeStaPSM, staMac, false);
-    //Simulator::Schedule (Seconds (27.0), &changeStaPSM, staMac, true);
+
   }
   
-  // Simulator::Schedule (Seconds (2.1), &printStaPSM, staMac);
-  // Simulator::Schedule (Seconds (2.1), &changeStaPSM, staMac, true);
-  // Simulator::Schedule (Seconds (2.6), &printStaPSM, staMac);
-  // Simulator::Schedule (Seconds (4.5), &changeStaPSM, staMac, false);
-  // Simulator::Schedule (Seconds (3.1), &printStaPSM, staMac);
-  // Simulator::Schedule (Seconds (6.0), &changeStaPSM, staMac, true);
-
 
   // IFS durations
   Ptr<WifiPhy> phy = device->GetPhy ();
@@ -837,22 +754,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   Time pifs = phy->GetPifs();    
   Time slot = phy->GetSlot();    
   Time difs = 2 * slot + sifs;     
-  //std::cout<<"\nSlot and IFS durations:\n";
-  //std::cout<<"\nslot (us) = "<<slot.GetMicroSeconds()<<"\nPIFS (us) = "<<pifs.GetMicroSeconds();
-  //std::cout<<"\nSIFS (us) = "<<sifs.GetMicroSeconds()<<"\nDIFS (us) = "<<difs.GetMicroSeconds()<<"\n\n";
-  
-  // phy->GetPifs();
-  
-  // ------------ Sleep and wake up - manually on PHY
-  // Simulator::Schedule (Seconds (2.0), &putToSleep, phy);
-  // Simulator::Schedule (Seconds (3.0), &wakeFromSleep, phy);
-
-  // ---------------- To test STA behavior when beacons are missed, position is changed
-  // Simulator::Schedule (Seconds (5.0), &changePosition, staWifiNode, double (1000.0));
-  // Simulator::Schedule (Seconds (7.1), &changePosition, staWifiNode, double (10.0));
-  
-
-
+ 
 // Changing attributes for STA
 Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons", UintegerValue(staMaxMissedBeacon));
 Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/AdvanceWakeupPS", TimeValue(AdvanceWakeupPS));
