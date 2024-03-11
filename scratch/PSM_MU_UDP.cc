@@ -446,7 +446,7 @@ main (int argc, char *argv[])
   //                                       "NonUnicastMode", StringValue ("DsssRate1Mbps"));
 
   NodeContainer wifiNodes;
-  wifiNodes.Create (2);     // First node = STA, second = PSM STA
+  wifiNodes.Create (2);     // First node = AP, second = PSM STA
   Ptr<Node> apWifiNode = wifiNodes.Get (0);
   Ptr<Node> staWifiNode = wifiNodes.Get (1);
 

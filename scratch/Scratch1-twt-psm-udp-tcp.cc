@@ -78,9 +78,10 @@ uint32_t payloadSize = 1024;                       /* Transport layer payload si
 uint32_t flowMonStartTime_s = 0.0;   // Start time for flow monitor in seconds
 uint32_t ampduLimitBytes = 20000;       //Maximum length in bytes of an A-MPDU for AC_BE access class 
 //50,000 at 143 Mbps and 5/6 coding takes 3.4 ms. refer to "BE_MaxAmpduSize"
-
+  bool useExtendedBlockAck {false};
 uint32_t bsrLife_ms = 10;                //Lifetime of Buffer Status Reports received from stations.
 // in ms - BSR life time. refer to "BsrLifetime"
+  int gi {800}; // Guard interval in nanoseconds (can be 800, 1600 or 3200 ns)
 
 
 //uint32_t dataRatebps_other = 1 * payloadSize*8/dataPeriod;  
@@ -422,11 +423,11 @@ TotalStaEnergy(double oldValue, double totalEnergy)
   uint32_t downlinkpoissonDataRate = 30e3; // more than 78 Mbps downlink 
 
   bool udp = true; //transport protocol: true for udp and false for tcp
-  uint32_t staMaxMissedBeacon = 10;                 // Set the max missed beacons for STA before attempt for reassociation
+  uint32_t staMaxMissedBeacon = 1000;                 // Set the max missed beacons for STA before attempt for reassociation
 
 Time AdvanceWakeupPS = MicroSeconds (10);
 
-uint16_t power{3};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
+uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
 bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
 
@@ -639,7 +640,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
  // LogComponentEnable ("OnOffApplication", LogLevel(LOG_PREFIX_ALL | LOG_LEVEL_INFO));
 // LogComponentEnable ("WifiTxParameters", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
-
   //*******************************************************
   //Time interPacketIntervalUdp = Seconds (double (udpUplinkPacketSizeBits)/double(dataRatebps_other));
 //  std::cout<<"\nConfigured Udp uplink interPacketInterval: "<<interPacketIntervalUdp.GetMilliSeconds()<<" ms";
@@ -678,58 +678,112 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 
   
 
+
+  WifiMacHelper wifiMac_AP;
+  WifiMacHelper wifiMac__STA;
+
+  NetDeviceContainer staWiFiDevice;
   NetDeviceContainer apWiFiDevice;
 
-  WifiMacHelper wifiMac;
-  WifiHelper wifiHelper;// wifiHelper_AP;
 
-  //wifiHelper.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  WifiHelper wifiHelper;
+
+  Ssid ssid;
+
+  Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel> ();
+  SpectrumWifiPhyHelper wifiPhy_twt; //phisical layer for twt
+    /* Set up Legacy Channel */
+  YansWifiChannelHelper psmwifiChannel;
+    /* Setup Physical Layer for no-twt */
+  YansWifiPhyHelper wifiPhy_psm;
+
+
+  //set up twt channel configuration
+  if (enableTwt){
+    NS_LOG_UNCOND("set up twt channel configuration");
+      ssid = Ssid ("ns3-80211ax");
   wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HeMcs7")
                                 , "ControlMode", StringValue ("HeMcs0"));
 
+  Config::SetDefault ("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
+                          EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
+
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue (2));
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
-  Ssid ssid = Ssid ("ns3-80211ax");
 
-  Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel> ();
-  SpectrumWifiPhyHelper wifiPhy;
-  wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-  wifiPhy.SetChannel (spectrumChannel);
-  wifiPhy.Set ("ChannelSettings", StringValue ("{0, 20, BAND_2_4GHZ, 0}"));
-  if (enableTwt){
-    Config::SetDefault ("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
-                          EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
-  }
-
-  wifiMac.SetType ("ns3::StaWifiMac",
-              "BE_BlockAckThreshold", UintegerValue (1),  // If AMPDU is used, Block Acks will always be used regardless of this value
-              "Ssid", SsidValue (ssid));
-
-  NetDeviceContainer staWiFiDevice;
-
-  staWiFiDevice = wifiHelper.Install (wifiPhy, wifiMac, StaNodes);
-  if (enableTwt){
-  
-  wifiMac.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
+  wifiMac_AP.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
                                 "EnableUlOfdma", BooleanValue (true),
                                 "EnableBsrp", BooleanValue (true),
                                 "NStations", UintegerValue (1)); //maxMuSta = 1 or StaCount
   // std::cout<<"\nTwtRrMultiUserScheduler is selected\n";
-    }
-  wifiMac.SetType ("ns3::ApWifiMac",
+  wifiMac_AP.SetType ("ns3::ApWifiMac",
               "EnableBeaconJitter", BooleanValue (false),
               "BE_BlockAckThreshold", UintegerValue (1),
-                // "BE_MaxAmsduSize", UintegerValue (7000),
-              //  "BE_MaxAmpduSize", UintegerValue (30000),
-              //  "BE_MaxAmpduSize", UintegerValue (64*1500),  // 64 MPDUs of 1500 bytes each
                 "BE_MaxAmpduSize", UintegerValue (ampduLimitBytes),  
                 "BsrLifetime", TimeValue (MilliSeconds (bsrLife_ms)),
+              "Ssid", SsidValue (ssid));    
+  wifiPhy_twt.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
+  wifiPhy_twt.SetChannel (spectrumChannel);
+  wifiPhy_twt.Set ("ChannelSettings", StringValue ("{0, 20, BAND_2_4GHZ, 0}"));
+  wifiMac__STA.SetType ("ns3::StaWifiMac",
+              "BE_BlockAckThreshold", UintegerValue (1),  // If AMPDU is used, Block Acks will always be used regardless of this value
               "Ssid", SsidValue (ssid));
   
+  staWiFiDevice = wifiHelper.Install (wifiPhy_twt, wifiMac__STA, StaNodes);
+  apWiFiDevice = wifiHelper.Install (wifiPhy_twt, wifiMac_AP, apWifiNode);
+  
+   // Set guard interval and MPDU buffer size
+  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/GuardInterval", TimeValue (NanoSeconds (gi)));
+  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/MpduBufferSize", UintegerValue (useExtendedBlockAck ? 256 : 64));
 
-  apWiFiDevice = wifiHelper.Install (wifiPhy, wifiMac, apWifiNode);
+    // Set max missed beacons at STAs to avoid dis-association
+  for (u_int32_t ii = 0; ii < StaCount; ii++)
+  {
+    
+    std::stringstream nodeIndexStringTemp, maxBcnStr, advWakeStr;
+    nodeIndexStringTemp << StaNodes.Get(ii)->GetId();
+    // maxBcnStr = "/NodeList/" + std::string(ii+1) + "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons";
+    maxBcnStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons";
+    advWakeStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/AdvanceWakeupPS";
+
+    Config::Set (maxBcnStr.str(), UintegerValue(staMaxMissedBeacon));
+    Config::Set (advWakeStr.str(), TimeValue(AdvanceWakeupPS));
+
+  }
+  }
+  //set up non-twt channel configuration
+  else{
+  NS_LOG_UNCOND ("set up non-twt channel configuration");
+  ssid = Ssid ("network");
+
+  wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
+  psmwifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+  psmwifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (2.4e9));
+  wifiPhy_psm.SetChannel (psmwifiChannel.Create ());
+  wifiPhy_psm.SetErrorRateModel ("ns3::YansErrorRateModel");
+
+  wifiMac_AP.SetType ("ns3::ApWifiMac",
+                   "Ssid", SsidValue (ssid));
+  wifiMac__STA.SetType ("ns3::StaWifiMac",
+                   "Ssid", SsidValue (ssid));
+  wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+                                      "DataMode", StringValue ("HeMcs7"),
+                                      "ControlMode", StringValue ("HeMcs3"),
+                                      "NonUnicastMode", StringValue ("HeMcs7"));
+  staWiFiDevice = wifiHelper.Install (wifiPhy_psm, wifiMac__STA, StaNodes);
+  apWiFiDevice = wifiHelper.Install (wifiPhy_psm, wifiMac_AP, apWifiNode);
+
+  Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/DtimPeriod", UintegerValue(3));
+
+  // ---------------- To change max queue size and delay of buffer for PS STAs at AP - does not work - note - shyam
+  Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferSize", QueueSizeValue(QueueSize ("678p")));
+  Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferDropDelay", TimeValue (MilliSeconds (1123)));
+
+
+  }
+ 
 
 
 // Enable / disable PSM and sleep state using MAC attribute change - through a function - not directly changing the MAC attribute 
@@ -737,7 +791,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   {
 
   Ptr<WifiNetDevice> device = staWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
-  
   Ptr<WifiMac> staMacTemp = device->GetMac ();
   Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
 
@@ -753,9 +806,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   Time slot = phy->GetSlot();    
   Time difs = 2 * slot + sifs;     
  */
-// Changing attributes for STA
-Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons", UintegerValue(staMaxMissedBeacon));
-Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/AdvanceWakeupPS", TimeValue(AdvanceWakeupPS));
 
 
 
@@ -776,6 +826,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
       Ptr<WifiNetDevice> device = staWiFiDevice.Get(ii)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
       Ptr<WifiMac> staMacTemp = device->GetMac ();
       Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
+      NS_LOG_UNCOND("staMac->GetAddress()" << staMac->GetAddress());
       
       Time delta = firstTwtSpOffsetFromBeacon + beaconInterval*ii/nextStaTwtSpOffsetDivider;
       
@@ -799,7 +850,7 @@ Config::Set ("/NodeList/1/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifi
   }
   
 // To enable short GI for all nodes--------------------------
-// Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (true));
+ //Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (true));
 //---------------------------------
 
 
@@ -1114,18 +1165,30 @@ if (enable_throughput_trace){
   Simulator::Schedule (Seconds (1.0), &CalculateThroughput );
 }
   /* Enable Traces */
-  if (pcapTracing)
+  if (pcapTracing && enableTwt)
     {
       std::stringstream ss1, ss2, ss4;
-      wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
+      wifiPhy_twt.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
       ss1<<FOLDER_PATH<< LOGNAME_PREFIX <<"_AP";
-      wifiPhy.EnablePcap (ss1.str(), apWiFiDevice);
+      wifiPhy_twt.EnablePcap (ss1.str(), apWiFiDevice);
       ss2<<FOLDER_PATH<< LOGNAME_PREFIX <<"_STA";
-      wifiPhy.EnablePcap (ss2.str(), staWiFiDevice);
+      wifiPhy_twt.EnablePcap (ss2.str(), staWiFiDevice);
       // ss3<<FOLDER_PATH<< LOGNAME_PREFIX <<"_otherSTA";
       // wifiPhy.EnablePcap (ss3.str(), otherStaWiFiDevices);
     }
 
+  /* Enable Traces */
+  if (pcapTracing && enablePSM_flag)
+    {
+      std::stringstream ss1, ss2, ss4;
+      wifiPhy_psm.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
+      ss1<<FOLDER_PATH<< LOGNAME_PREFIX <<"_AP";
+      wifiPhy_psm.EnablePcap (ss1.str(), apWiFiDevice);
+      ss2<<FOLDER_PATH<< LOGNAME_PREFIX <<"_STA";
+      wifiPhy_psm.EnablePcap (ss2.str(), staWiFiDevice);
+      // ss3<<FOLDER_PATH<< LOGNAME_PREFIX <<"_otherSTA";
+      // wifiPhy.EnablePcap (ss3.str(), otherStaWiFiDevices);
+    }
 
    if(enablePhyStateTrace){
   //phy state
