@@ -1501,9 +1501,9 @@ if (enableFlowMon)
   DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
 
   average_sta_energy = average_sta_energy/StaCount;
-  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
+  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << StaCount << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
 
-  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
+  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << StaCount << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
   
 
   allTxtime.clear(); //all transsmission time
