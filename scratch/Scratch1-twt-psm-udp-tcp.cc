@@ -89,7 +89,7 @@ bool enable_throughput_trace = false;
 bool enableEnergyTrace = false;  
 bool enablePSM_flag = false;
 //uint32_t PSM_activation_time = 3.0;     // to reproduce the bug please run with " % ./waf --run "scratch/Scratch1-twt-psm-udp-tcp --randSeed=20 --link=2 --power=1 --traffic=3 --udp=0 --StaCount=2" comman
-uint32_t PSM_activation_time = 6.5;
+uint32_t PSM_activation_time = 8.5;
 uint32_t link = 1; //communication link = 1: uplink, 2: downlink, 3: douplex 
 bool enablePhyStateTrace = true ;
 bool enableFlowMon = true;          // Enable flow monitor if true
@@ -209,6 +209,8 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 
 
 void callbackfunctions(){
+   LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+
   // LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("WifiTxParameters", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
@@ -744,7 +746,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
     
     std::stringstream nodeIndexStringTemp, maxBcnStr, advWakeStr;
     nodeIndexStringTemp << StaNodes.Get(ii)->GetId();
-    // maxBcnStr = "/NodeList/" + std::string(ii+1) + "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons";
     maxBcnStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons";
     advWakeStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/AdvanceWakeupPS";
 
@@ -789,13 +790,14 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 // Enable / disable PSM and sleep state using MAC attribute change - through a function - not directly changing the MAC attribute 
   if (enablePSM_flag)
   {
+    for (u_int32_t ii = 0; ii < StaCount ; ii++)
+    {
+      Ptr<WifiNetDevice> device = staWiFiDevice.Get(ii)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
+      Ptr<WifiMac> staMacTemp = device->GetMac ();
+      Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
 
-  Ptr<WifiNetDevice> device = staWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
-  Ptr<WifiMac> staMacTemp = device->GetMac ();
-  Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
-
-    Simulator::Schedule (Seconds (PSM_activation_time), &changeStaPSM, staMac, true);
-
+      Simulator::Schedule (Seconds (PSM_activation_time), &changeStaPSM, staMac, true);
+    }
   }
   
 /*
@@ -1084,14 +1086,14 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         clientApp.Stop (Seconds (simulationTime + 1));
         }
         sinkApps.Add(tempsinkApp);
-        
+      }  
         //ping the server(10.1.1.1) from all STAs
         V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
         ApplicationContainer pinger = ping.Install(StaNodes);
         pinger.Start (Seconds (0.1));
         pinger.Stop (Seconds (1.9));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
-      }
+      
     }
   Simulator::Schedule (Seconds (0), &Ipv4GlobalRoutingHelper::PopulateRoutingTables);
 
@@ -1105,7 +1107,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         if (udp)
           {
             //Servers and sinks at STAs
-        for(uint32_t in = 0; in < StaNodes.GetN(); in++){          
+        for(uint32_t in = 0; in < StaCount; in++){          
           PacketSinkHelper sinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
           ApplicationContainer tempsinkApp;
           tempsinkApp = sinkHelper.Install (StaNodes.Get(in));
@@ -1132,7 +1134,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         }  
       }
         else{
-          for(uint32_t in = 0; in < StaNodes.GetN(); in++){          
+          for(uint32_t in = 0; in < StaCount; in++){          
           PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
           ApplicationContainer tempsinkApp;
           tempsinkApp = sinkHelper.Install (StaNodes.Get(in));
@@ -1219,7 +1221,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-//Simulator::Schedule(Seconds(8.0), &callbackfunctions);
+//Simulator::Schedule(Seconds(2.0), &callbackfunctions);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
