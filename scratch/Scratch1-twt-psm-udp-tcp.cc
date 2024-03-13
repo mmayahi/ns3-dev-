@@ -66,7 +66,7 @@ std::string LoopIndex = "123213";     // This will be updated with input from cm
 
 ApplicationContainer sinkApps;                         /* packet sink application */
 uint64_t lastTotalRx = 0;                     /* The value of the last total received bytes */
-//uint32_t delACKTimer_ms = 0;                     /* TCP delayed ACK timer in ms   */ 
+uint32_t delACKTimer_ms = 0;                     /* TCP delayed ACK timer in ms   */ 
 
 //Configurable parameters************************
 double simulationTime = 30;                        /* Simulation time in seconds. */
@@ -762,6 +762,15 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   else{
   NS_LOG_UNCOND ("set up non-twt channel configuration");
   ssid = Ssid ("network");
+  if (!udp){
+      //tcpVariant = std::string ("ns3::") + tcpVariant;
+  //tcpVariant = std::string ("ns3::TcpNewReno");
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
+  /* Configure TCP Options */
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (payloadSize));
+  Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue (MilliSeconds (delACKTimer_ms)));
+
+  }
   Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
   Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
   wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
@@ -771,9 +780,15 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   wifiPhy_psm.SetErrorRateModel ("ns3::YansErrorRateModel");
 
   wifiMac_AP.SetType ("ns3::ApWifiMac",
-                   "Ssid", SsidValue (ssid));
+                    "EnableBeaconJitter", BooleanValue (false),
+                    "BE_MaxAmpduSize", UintegerValue (ampduLimitBytes),
+                    "BsrLifetime", TimeValue (MilliSeconds (bsrLife_ms)),
+                    "BE_BlockAckThreshold", UintegerValue (5),
+                    "EnableUApsd", BooleanValue(true),                    
+                    "Ssid", SsidValue (ssid));
   wifiMac__STA.SetType ("ns3::StaWifiMac",
-                   "Ssid", SsidValue (ssid));
+                    "BE_BlockAckThreshold", UintegerValue (1),
+                    "Ssid", SsidValue (ssid));
   wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                       "DataMode", StringValue ("HeMcs7"),
                                       "ControlMode", StringValue ("HeMcs3"),
