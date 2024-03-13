@@ -48,7 +48,8 @@ WifiMacQueue::GetTypeId (void)
                    MakeQueueSizeChecker ())
     .AddAttribute ("MaxDelay", "If a packet stays longer than this delay in the queue, it is dropped.",
                    TimeValue (MilliSeconds (500)),
-                   MakeTimeAccessor (&WifiMacQueue::SetMaxDelay),
+                   MakeTimeAccessor (&WifiMacQueue::SetMaxDelay,
+                                     &WifiMacQueue::GetMaxDelay),
                    MakeTimeChecker ())
     .AddAttribute ("DropPolicy", "Upon enqueue with full queue, drop oldest (DropOldest) or newest (DropNewest) packet",
                    EnumValue (DROP_NEWEST),
@@ -628,6 +629,7 @@ WifiMacQueue::DoRemove (ConstIterator pos)
     {
       WifiAddressTidPair addressTidPair (item->GetHeader ().GetAddr1 (), item->GetHeader ().GetQosTid ());
       NS_ASSERT (m_nQueuedPackets.find (addressTidPair) != m_nQueuedPackets.end ());
+      NS_LOG_INFO ("item->GetHeader ().GetAddr1 ():" << item->GetHeader ().GetAddr1 ());
       NS_ASSERT (m_nQueuedPackets[addressTidPair] >= 1);
       NS_ASSERT (m_nQueuedBytes[addressTidPair] >= item->GetSize ());
 

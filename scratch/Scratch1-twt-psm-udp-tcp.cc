@@ -89,7 +89,7 @@ bool enable_throughput_trace = false;
 bool enableEnergyTrace = false;  
 bool enablePSM_flag = false;
 //uint32_t PSM_activation_time = 3.0;     // to reproduce the bug please run with " % ./waf --run "scratch/Scratch1-twt-psm-udp-tcp --randSeed=20 --link=2 --power=1 --traffic=3 --udp=0 --StaCount=2" comman
-uint32_t PSM_activation_time = 8.5;
+uint32_t PSM_activation_time = 6.5;
 uint32_t link = 1; //communication link = 1: uplink, 2: downlink, 3: douplex 
 bool enablePhyStateTrace = true ;
 bool enableFlowMon = true;          // Enable flow monitor if true
@@ -714,6 +714,10 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue (2));
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
+  Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
+  Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
+
+
 
   wifiMac_AP.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
                                 "EnableUlOfdma", BooleanValue (true),
@@ -758,7 +762,8 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   else{
   NS_LOG_UNCOND ("set up non-twt channel configuration");
   ssid = Ssid ("network");
-
+  Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
+  Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
   wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   psmwifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   psmwifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (2.4e9));
@@ -777,10 +782,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   apWiFiDevice = wifiHelper.Install (wifiPhy_psm, wifiMac_AP, apWifiNode);
 
   Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/DtimPeriod", UintegerValue(3));
-
-  // ---------------- To change max queue size and delay of buffer for PS STAs at AP - does not work - note - shyam
-  Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferSize", QueueSizeValue(QueueSize ("678p")));
-  Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferDropDelay", TimeValue (MilliSeconds (1123)));
 
 
   }
@@ -808,6 +809,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   Time slot = phy->GetSlot();    
   Time difs = 2 * slot + sifs;     
  */
+  // ---------------- To change max queue size and delay of buffer for PS STAs at AP - does not work - note - shyam
 
 
 
@@ -1221,7 +1223,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-//Simulator::Schedule(Seconds(2.0), &callbackfunctions);
+//Simulator::Schedule(Seconds(6.0), &callbackfunctions);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
