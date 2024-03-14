@@ -71,17 +71,18 @@ uint32_t delACKTimer_ms = 0;                     /* TCP delayed ACK timer in ms 
 //Configurable parameters************************
 double simulationTime = 30;                        /* Simulation time in seconds. */
 
-uint32_t P2PLinkDelay_ms = 1;                  // Set this to be half of the expected RTT
-
 uint32_t payloadSize = 1024;                       /* Transport layer payload size in bytes. */
 //double dataPeriod = 0.001;                       /* Application data period in seconds. */
 uint32_t flowMonStartTime_s = 0.0;   // Start time for flow monitor in seconds
 uint32_t ampduLimitBytes = 20000;       //Maximum length in bytes of an A-MPDU for AC_BE access class 
 //50,000 at 143 Mbps and 5/6 coding takes 3.4 ms. refer to "BE_MaxAmpduSize"
-  bool useExtendedBlockAck {false};
+bool useExtendedBlockAck {false};
 uint32_t bsrLife_ms = 10;                //Lifetime of Buffer Status Reports received from stations.
 // in ms - BSR life time. refer to "BsrLifetime"
-  int gi {800}; // Guard interval in nanoseconds (can be 800, 1600 or 3200 ns)
+int gi {800}; // Guard interval in nanoseconds (can be 800, 1600 or 3200 ns)
+uint8_t staCountModulusForTwt = 1;      // Modulus for STA count for TWT SP start - TWT SP start Offset is added only after each 'staCountModulusForTwt' STAs
+uint8_t maxOffsetModulusMultiplier = 2;      // Offsets added = providedOffset % (maxOffsetModulusMultiplier * BI)
+double nextStaTwtSpOffsetDivider = 16;   // K, where nextStaTwtSpOffset = BI / K; K is double
 
 
 //uint32_t dataRatebps_other = 1 * payloadSize*8/dataPeriod;  
@@ -89,7 +90,7 @@ bool enable_throughput_trace = false;
 bool enableEnergyTrace = false;  
 bool enablePSM_flag = false;
 //uint32_t PSM_activation_time = 3.0;     // to reproduce the bug please run with " % ./waf --run "scratch/Scratch1-twt-psm-udp-tcp --randSeed=20 --link=2 --power=1 --traffic=3 --udp=0 --StaCount=2" comman
-uint32_t PSM_activation_time = 6.5;
+uint32_t PSM_activation_time = 8.5;
 uint32_t link = 1; //communication link = 1: uplink, 2: downlink, 3: douplex 
 bool enablePhyStateTrace = true ;
 bool enableFlowMon = true;          // Enable flow monitor if true
@@ -103,14 +104,32 @@ bool poissonTraffic = false; //if true, predictable periodic is converted to pos
 //uint32_t multicastInterval_ms = 200;
 Time beaconInterval = MicroSeconds(102400);  // 102.4 ms as beacon interval
 uint32_t packetsPerSecond = 10;        // UL Packets per second per station
-Time firstTwtSpOffsetFromBeacon = MilliSeconds (3);    // Offset from beacon for first TWT SP
+Time firstTwtSpOffsetFromBeacon = MilliSeconds (2);    // Offset from beacon for first TWT SP
 Time firstTwtSpStart = (83 * beaconInterval);
-double nextStaTwtSpOffsetDivider = 5;   // K, where nextStaTwtSpOffset = BI / K; K is double
-double twtWakeIntervalMultiplier = 1;    // K, where twtWakeInterval = BI * K; K is double
-double twtNominalWakeDurationDivider = 5;    // K, where twtNomimalWakeDuration = BI / K; K is double
+double twtWakeIntervalMultiplier = 0.25;    // K, where twtWakeInterval = BI * K; K is double
+double twtNominalWakeDurationDivider = 16;    // K, where twtNomimalWakeDuration = BI / K; K is double
 bool twtTriggerBased = false; // Set it to false for contention-based TWT
 
+ uint32_t StaCount = 1;  
+  // std::string dataRate_other = std::to_string(dataRatebps_other) + std::string("bps");
+  //uint32_t udpUplinkPacketSizeBits = udpUplinkPacketSizeBytes * 8;
+  //uint32_t maxUdpPacketCount = 4294967295u;      // max for this attribute 
+  
+  
+  // Random seed
+  //uint32_t randSeed = 10;     
+  //UDP flow - Uplink traffic only
+  uint32_t uplinkpoissonDataRate = 20e3; // more than 111 Mbps uplink 
+  uint32_t downlinkpoissonDataRate = 30e3; // more than 78 Mbps downlink 
 
+  bool udp = true; //transport protocol: true for udp and false for tcp
+  uint32_t staMaxMissedBeacon = 1000;                 // Set the max missed beacons for STA before attempt for reassociation
+
+Time AdvanceWakeupPS = MicroSeconds (10);
+
+uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
+
+bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
 //-**************************************************************************
 
 // output file for sta throughput 
@@ -134,7 +153,11 @@ static std::map<u_int32_t , double> Txsum; //data transsmission time
 static std::map<u_int32_t , double> Rxsum; //data reception time
 static std::map<u_int32_t , double> TxsigSum; // signaling transmission time
 static std::map<u_int32_t , double> RxsigSum; // signaling reception time
+static std::map<u_int32_t , Vector> NodPos; // positions of the all nodes
+
 // Parse context strings of the form "/NodeList/x/DeviceList/x/..." to extract the NodeId integer
+
+///*************************************************************************//////
 uint32_t
 ContextToNodeId (std::string context)
 {
@@ -209,9 +232,9 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 
 
 void callbackfunctions(){
-   LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+  // LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
-  // LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+   LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("WifiTxParameters", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
@@ -411,27 +434,6 @@ TotalStaEnergy(double oldValue, double totalEnergy)
 
 //-*******************************************************************
 
-
-  uint32_t StaCount = 1;  
-  // std::string dataRate_other = std::to_string(dataRatebps_other) + std::string("bps");
-  //uint32_t udpUplinkPacketSizeBits = udpUplinkPacketSizeBytes * 8;
-  //uint32_t maxUdpPacketCount = 4294967295u;      // max for this attribute 
-  
-  
-  // Random seed
-  //uint32_t randSeed = 10;     
-  //UDP flow - Uplink traffic only
-  uint32_t uplinkpoissonDataRate = 20e3; // more than 111 Mbps uplink 
-  uint32_t downlinkpoissonDataRate = 30e3; // more than 78 Mbps downlink 
-
-  bool udp = true; //transport protocol: true for udp and false for tcp
-  uint32_t staMaxMissedBeacon = 1000;                 // Set the max missed beacons for STA before attempt for reassociation
-
-Time AdvanceWakeupPS = MicroSeconds (10);
-
-uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
-
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
 
 int
 main (int argc, char *argv[])
@@ -703,6 +705,19 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   //set up twt channel configuration
   if (enableTwt){
     NS_LOG_UNCOND("set up twt channel configuration");
+
+      if (!udp){
+      //tcpVariant = std::string ("ns3::") + tcpVariant;
+  //tcpVariant = std::string ("ns3::TcpNewReno");
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
+  /* Configure TCP Options */
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (payloadSize));
+  Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue (MilliSeconds (delACKTimer_ms)));
+    // Config::SetDefault ("ns3::TcpSocket::ConnTimeout", TimeValue (Seconds (1)));    //"TCP retransmission timeout when opening connection (seconds) - default 3 seconds"
+  Config::SetDefault ("ns3::TcpSocket::ConnTimeout", TimeValue (MilliSeconds(200)));    //"TCP retransmission timeout when opening connection (seconds) - default 3 seconds"
+  Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (20));
+
+  }
       ssid = Ssid ("ns3-80211ax");
   wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HeMcs7")
@@ -845,12 +860,14 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
       Ptr<WifiNetDevice> device = staWiFiDevice.Get(ii)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
       Ptr<WifiMac> staMacTemp = device->GetMac ();
       Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
-      NS_LOG_UNCOND("staMac->GetAddress()" << staMac->GetAddress());
+      //NS_LOG_UNCOND("staMac->GetAddress()" << staMac->GetAddress());
       
-      Time delta = firstTwtSpOffsetFromBeacon + beaconInterval*ii/nextStaTwtSpOffsetDivider;
-      
+      Time delta = firstTwtSpOffsetFromBeacon + int(ii/staCountModulusForTwt)*beaconInterval/nextStaTwtSpOffsetDivider;
+      delta = MicroSeconds( delta.GetMicroSeconds()% (maxOffsetModulusMultiplier*beaconInterval.GetMicroSeconds()) );   
+      // To ensure that offsets are not too large. That may cause frame drops before the first SP begins. Above line ensures that the first scheduled SP is no further than k*BI from the next beacon in the future
+            
       // Time scheduleTwtAgreement = (firstTwtSpStart + ii*MilliSeconds(3));
-      Time scheduleTwtAgreement = (firstTwtSpStart + MilliSeconds(20) + ii*MilliSeconds(2));
+      Time scheduleTwtAgreement = (firstTwtSpStart + MilliSeconds(20) + ii*MicroSeconds(100));
       // Time scheduleTwtAgreement = (firstTwtSpStart);
       Time twtWakeInterval = twtWakeIntervalMultiplier*beaconInterval;
       Time twtNominalWakeDuration = beaconInterval/twtNominalWakeDurationDivider;
@@ -878,6 +895,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
 
   positionAlloc->Add (Vector (0.0, 0.0, 0.0));
+  NodPos[0]= Vector(0.0, 0.0, 0.0);
 //  std::cout<<"Positions:\n";
   for (uint32_t ii = 0; ii <StaCount ; ii++)
   {
@@ -885,6 +903,9 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
     currentY = yCoordinateRand->GetValue ();
   //  std::cout<<"\totherSTA "<<ii<<" : ["<< currentX<<", "<<currentY <<", 0.0 ];\n";
     positionAlloc->Add (Vector (currentX, currentY, 0.0));
+    NodPos[ii+1]= Vector(currentX, currentY, 0.0);
+   // NS_LOG_UNCOND ("STA " << ii << " position: (" <<  currentX << "," << currentY << "," << "0.0)");
+
   }
   
   
@@ -1079,8 +1100,8 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         //ping the server(10.1.1.1) from all STAs
         V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
         ApplicationContainer pinger = ping.Install(StaNodes);
-        pinger.Start (Seconds (0.1));
-        pinger.Stop (Seconds (1.9));
+        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        pinger.Stop (Seconds (2.0));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
 
         }
@@ -1099,20 +1120,20 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
         for (uint32_t appcount =0 ; appcount < StaCount ; appcount++){
         ApplicationContainer clientApp = onoff.Install (StaNodes.Get(appcount));
-        clientApp.Start (Seconds(1 + randTime->GetValue()));
-        clientApp.Stop (Seconds (simulationTime + 1));
+        clientApp.Start (Seconds(2 + randTime->GetValue()));
+        clientApp.Stop (Seconds (simulationTime + 2));
         }
         sinkApps.Add(tempsinkApp);
       }  
         //ping the server(10.1.1.1) from all STAs
         V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
         ApplicationContainer pinger = ping.Install(StaNodes);
-        pinger.Start (Seconds (0.1));
-        pinger.Stop (Seconds (1.9));
+        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        pinger.Stop (Seconds (2.0));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
       
     }
-  Simulator::Schedule (Seconds (0), &Ipv4GlobalRoutingHelper::PopulateRoutingTables);
+  Simulator::Schedule (Seconds (0.01), &Ipv4GlobalRoutingHelper::PopulateRoutingTables);
 
 
   // Scheduling downlink packets from MainUDPServerNode to each of STAs
@@ -1138,14 +1159,14 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
         onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
         ApplicationContainer clientApp = onoff.Install (apWifiNode);
-        clientApp.Start (Seconds(1 + randTime->GetValue()));
-        clientApp.Stop (Seconds (simulationTime + 1));
+        clientApp.Start (Seconds(2 + randTime->GetValue()));
+        clientApp.Stop (Seconds (simulationTime + 2));
         
         //ping the servers(10.0.0.*) from the remote server
         V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
         ApplicationContainer pinger = ping.Install(apWifiNode);
-        pinger.Start (Seconds (0.2));
-        pinger.Stop (Seconds (1.9));
+        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        pinger.Stop (Seconds (2.0));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
 
         }  
@@ -1164,15 +1185,15 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
         onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
         ApplicationContainer clientApp = onoff.Install (apWifiNode);
-        clientApp.Start (Seconds(1 +  randTime->GetValue()));
-        clientApp.Stop (Seconds (simulationTime + 1));
+        clientApp.Start (Seconds(2 +  randTime->GetValue()));
+        clientApp.Stop (Seconds (simulationTime + 2));
 
 
         //ping the servers(10.0.0.*) from the remote server
         V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
         ApplicationContainer pinger = ping.Install(apWifiNode);
-        pinger.Start (Seconds (0.2));
-        pinger.Stop (Seconds (1.9));
+        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        pinger.Stop (Seconds (2.0));
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
 
         }
@@ -1238,7 +1259,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-//Simulator::Schedule(Seconds(6.0), &callbackfunctions);
+//Simulator::Schedule(Seconds(8.0), &callbackfunctions);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
@@ -1296,6 +1317,12 @@ if (enableFlowMon)
     std::cout<<"\nFlow Level Stats:\n";
     std::cout<<"-----------------\n\n";
 
+std::cout<<"Node's Positions:\n\n";
+
+    for (const auto & [key, value] : NodPos)
+        std::cout <<"["<<key<<"] , " << value << "\n";
+    std::cout<<"-----------------\n\n";
+
     Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
     std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
     // find size of stats
@@ -1308,7 +1335,6 @@ if (enableFlowMon)
     double sum_downlink_packet_lost = 0;
     double sum_downlink_tx_packet = 0;
     double sum_uplink_tx_packet = 0;
-
     int counter = 0;
     for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
       {
@@ -1498,7 +1524,7 @@ if (enableFlowMon)
   //std::cout << "signaling RX time at AP = " <<(allRxtime [0] - Rxsum [0])<< " Seconds."<<std::endl;
   //overhead energy at AP = overhead tx time * power at tx mode + overhead rx time * power at rx mode
   //std::cout << "allRxtime [0]: " << allRxtime [0]<< std::endl;
-  //std::cout << "allTxtime [0]: " << allTxtime [0]<< std::endl;
+
 
   
   ap_ovrhd_energy = ((TxsigSum [1]) * 0.668 * 12.2) + ((RxsigSum[1]) * 0.568 *12.2);
@@ -1532,6 +1558,7 @@ if (enableFlowMon)
   Rxsum.clear(); //data reception time
   TxsigSum.clear(); //signaling transsmission time
   RxsigSum.clear(); //signaling reception time
+  NodPos.clear(); // Node positions
 /*
          }
       }

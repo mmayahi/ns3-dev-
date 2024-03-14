@@ -1179,7 +1179,6 @@ StaWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
   const WifiMacHeader* hdr = &mpdu->GetHeader ();
   Ptr<const Packet> packet = mpdu->GetPacket ();
   NS_ASSERT (!hdr->IsCtl () || hdr->IsAck()); // shyam
-  NS_LOG_DEBUG ("hdr->GetAddr1 ()="<<hdr->GetAddr1 ());
   if (hdr->GetAddr3 () == GetAddress ())
     {
       NS_LOG_LOGIC ("packet sent by us.");
