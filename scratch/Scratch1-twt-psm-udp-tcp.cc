@@ -51,7 +51,7 @@
 
 
 //-*********************************
-#define LOGNAME_PREFIX "WiFiPSM_MU"
+//#define LOGNAME_PREFIX "WiFiPSM_MU"
 #define FOLDER_PATH "MU_logs/"
 
 NS_LOG_COMPONENT_DEFINE ("WiFiPSM");
@@ -119,8 +119,8 @@ bool twtTriggerBased = false; // Set it to false for contention-based TWT
   // Random seed
   //uint32_t randSeed = 10;     
   //UDP flow - Uplink traffic only
-  uint32_t uplinkpoissonDataRate = 20e3; // more than 111 Mbps uplink 
-  uint32_t downlinkpoissonDataRate = 30e3; // more than 78 Mbps downlink 
+  uint32_t uplinkpoissonDataRate = 200e3; // more than 111 Mbps uplink 
+  uint32_t downlinkpoissonDataRate = 200e3; // more than 78 Mbps downlink 
 
   bool udp = true; //transport protocol: true for udp and false for tcp
   uint32_t staMaxMissedBeacon = 1000;                 // Set the max missed beacons for STA before attempt for reassociation
@@ -232,18 +232,18 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 
 
 void callbackfunctions(){
-  // LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+   LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
    LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("WifiTxParameters", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
- //LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
-//LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
- //LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
- //LogComponentEnable ("MultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
- //LogComponentEnable ("WifiRemoteStationManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("MultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("WifiRemoteStationManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
 }
 
@@ -458,7 +458,6 @@ main (int argc, char *argv[])
 
   /* Command line argument parser setup. */ 
   CommandLine cmd (__FILE__);
-
   cmd.AddValue ("link", "Communication link = 1 for uplink, 2 for downlink, 3 for duplex", link);
   cmd.AddValue("power", "power save mechanism (1 for PSM, 2 for twt and 3 for active mode).", power);
   cmd.AddValue ("traffic", "traffic generator. 1: periodic traffic, 2:poisson traffic, 3: full buffer", traffic);
@@ -514,16 +513,19 @@ main (int argc, char *argv[])
   
     if (traffic == 1){
     forcePeriodicTraffic = true;
-    poissonTraffic = false;    
+    poissonTraffic = false;
+    
   }
 
   else if (traffic == 2){
     forcePeriodicTraffic = false;
     poissonTraffic = true;
+
+
   }
   else {
     forcePeriodicTraffic = false;
-    poissonTraffic = false; 
+    poissonTraffic = false;
   }
 
 
@@ -585,9 +587,9 @@ x->SetAttribute ("Mean", DoubleValue (downlinkmean));
 x->SetAttribute ("Bound", DoubleValue (downlinkbound));
 uint32_t downlinkvalue = x->GetValue();
 */
-std::string uplinkstr = std::to_string(uplinkpoissonDataRate)+"kb/s";
+std::string uplinkstr = std::to_string(uplinkpoissonDataRate/StaCount)+"kb/s";
 
-std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
+std::string downlinkstr = std::to_string(downlinkpoissonDataRate/StaCount)+"kb/s";
 //std::cout<<" down link data rate "<<downlinkstr <<std::endl;
 /*  std::cout<<"\nLoop index is "<<LoopIndex;
   std::cout<<"\nsimulationTime is "<<simulationTime;
@@ -602,6 +604,8 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 
     // Logging if necessary
   
+  // LogComponentEnable ("ArpCache", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+//
 // LogComponentEnable ("WifiHelper", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("ApWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
@@ -609,12 +613,16 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 // LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiMacQueueItem", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiRemoteStationManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("WifiPhy", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("FrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL | LOG_DEBUG ));
- //LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("VhtFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+/* LogComponentEnable ("WifiPhy", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("PhyEntity", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("DsssPhy", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("OfdmPhy", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("HePhy", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+LogComponentEnable ("FrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL | LOG_DEBUG ));
+LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+*/// LogComponentEnable ("VhtFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("HtFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+//LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("PhyEntity", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiPhyStateHelper", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
@@ -622,12 +630,12 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 // LogComponentEnable ("WifiDefaultAckManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiAckManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("ChannelAccessManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("QosTxop", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+//LogComponentEnable ("QosTxop", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("Txop", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("BlockAckManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("BlockAckAgreement", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("BlockAckWindow", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+/*LogComponentEnable ("BlockAckManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+LogComponentEnable ("BlockAckAgreement", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+*/// LogComponentEnable ("BlockAckWindow", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("MacTxMiddle", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiPhyStateHelper", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiPhyStateHelper", LogLevel (LOG_LEVEL_INFO));
@@ -722,9 +730,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HeMcs7")
                                 , "ControlMode", StringValue ("HeMcs0"));
-
-  Config::SetDefault ("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
-                          EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
+  //wifiHelper.EnableLogComponents();
 
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue (2));
@@ -736,16 +742,16 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
 
   wifiMac_AP.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
                                 "EnableUlOfdma", BooleanValue (true),
-                                "EnableBsrp", BooleanValue (true),
+                                "EnableBsrp", BooleanValue (false),
                                 "NStations", UintegerValue (1)); //maxMuSta = 1 or StaCount
+  wifiMac_AP.SetAckManager("ns3::WifiDefaultAckManager", "DlMuAckSequenceType", EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
   // std::cout<<"\nTwtRrMultiUserScheduler is selected\n";
   wifiMac_AP.SetType ("ns3::ApWifiMac",
-              "EnableBeaconJitter", BooleanValue (false),
+              "EnableBeaconJitter", BooleanValue (true),
               "BE_BlockAckThreshold", UintegerValue (1),
                 "BE_MaxAmpduSize", UintegerValue (ampduLimitBytes),  
                 "BsrLifetime", TimeValue (MilliSeconds (bsrLife_ms)),
               "Ssid", SsidValue (ssid));    
-  wifiPhy_twt.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
   wifiPhy_twt.SetChannel (spectrumChannel);
   wifiPhy_twt.Set ("ChannelSettings", StringValue ("{0, 20, BAND_2_4GHZ, 0}"));
   wifiMac__STA.SetType ("ns3::StaWifiMac",
@@ -848,6 +854,8 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   Ptr<WifiNetDevice> apWifiDevice = apWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
   Ptr<WifiMac> apMacTemp = apWifiDevice->GetMac ();
   Ptr<ApWifiMac> apMac = DynamicCast<ApWifiMac> (apMacTemp);
+  //NS_LOG_UNCOND("apMac->GetAddress() " << apMac->GetAddress());
+
   // Mac48Address apMacAddress = apMac->GetAddress();
   // std::cout<<"Ap MAC:"<<apMac<<"\n";
 
@@ -860,7 +868,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
       Ptr<WifiNetDevice> device = staWiFiDevice.Get(ii)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
       Ptr<WifiMac> staMacTemp = device->GetMac ();
       Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
-      //NS_LOG_UNCOND("staMac->GetAddress()" << staMac->GetAddress());
+      //NS_LOG_UNCOND("staMac->GetAddress() " << staMac->GetAddress());
       
       Time delta = firstTwtSpOffsetFromBeacon + int(ii/staCountModulusForTwt)*beaconInterval/nextStaTwtSpOffsetDivider;
       delta = MicroSeconds( delta.GetMicroSeconds()% (maxOffsetModulusMultiplier*beaconInterval.GetMicroSeconds()) );   
@@ -982,33 +990,6 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
   staInterface = address.Assign (staWiFiDevice);
 
 
-  /*address.SetBase ("10.1.1.0", "255.255.255.0");
-  Ipv4InterfaceContainer P2PInterfaces;
-  P2PInterfaces = address.Assign (P2Pdevices);
-*/
-  // // Printing MAC Addresses to console
-  // std::cout<<"MAC Addresses:\n";
-  // std::cout<<"\tP2P device 0: "<<P2Pdevices.Get(0)->GetAddress()<<std::endl;
-  // std::cout<<"\tP2P device 1: "<<P2Pdevices.Get(1)->GetAddress()<<std::endl;
-  // std::cout<<"\tAP: "<<apWiFiDevice.Get(0)->GetAddress()<<std::endl;
-  // std::cout<<"\tPSM STA: "<<staWiFiDevice.Get(0)->GetAddress()<<std::endl;
-  // for (uint32_t ii = 0; ii < otherStaCount; ii++)
-  // {
-  //   std::cout<<"\tOther STA"<<ii<<": "<<otherStaWiFiDevices.Get(ii)->GetAddress()<<std::endl;
-  // }
-
-  // // Printing IP Addresses to console
-  // std::cout<<"IP Addresses:\n";
-  // std::cout<<"\tP2P device 0: "<<P2PInterfaces.GetAddress(0)<<std::endl;
-  // std::cout<<"\tP2P device 1: "<<P2PInterfaces.GetAddress(1)<<std::endl;
-  // std::cout<<"\tAP: "<<apInterface.GetAddress(0)<<std::endl;
-  // std::cout<<"\tPSM STA: "<<staInterface.GetAddress(0)<<std::endl;
-  // for (uint32_t ii = 0; ii < otherStaCount; ii++)
-  // {
-  //   std::cout<<"\tOther STA"<<ii<<": "<<otherStaInterfaces.GetAddress(ii)<<std::endl;
-  // }
-
-
   /* Populate routing table */
   //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
@@ -1090,21 +1071,22 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
           onoff.SetAttribute ("OffTime", StringValue (offTimeString));
           onoff.SetAttribute ("DataRate", DataRateValue (DataRate (uplinkstr)));
           onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+                
+          
+        //ping the server(10.1.1.1) from all STAs
+        V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
         for (uint32_t appcount =0 ; appcount < StaCount ; appcount++){
         ApplicationContainer clientApp = onoff.Install (StaNodes.Get(appcount));
         clientApp.Start (Seconds(2 + randTime->GetValue()));
         clientApp.Stop (Seconds (simulationTime + 2));
-        }          
-          
-        sinkApps.Add(tempsinkApp);
-        //ping the server(10.1.1.1) from all STAs
-        V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
-        ApplicationContainer pinger = ping.Install(StaNodes);
-        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        ApplicationContainer pinger = ping.Install(StaNodes.Get(appcount));
+        pinger.Start (Seconds (1.0 ) + MilliSeconds(10*appcount));
         pinger.Stop (Seconds (2.0));
+         }
+        sinkApps.Add(tempsinkApp);
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
-
         }
+
         else
         {
         //TCP flow
@@ -1133,7 +1115,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate)+"kb/s";
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
       
     }
-  Simulator::Schedule (Seconds (0.01), &Ipv4GlobalRoutingHelper::PopulateRoutingTables);
+  Simulator::Schedule (Seconds (0.1), &Ipv4GlobalRoutingHelper::PopulateRoutingTables);
 
 
   // Scheduling downlink packets from MainUDPServerNode to each of STAs
@@ -1209,9 +1191,9 @@ if (enable_throughput_trace){
     {
       std::stringstream ss1, ss2, ss4;
       wifiPhy_twt.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-      ss1<<FOLDER_PATH<< LOGNAME_PREFIX <<"_AP";
+      ss1<<FOLDER_PATH<< "TWT_AP";
       wifiPhy_twt.EnablePcap (ss1.str(), apWiFiDevice);
-      ss2<<FOLDER_PATH<< LOGNAME_PREFIX <<"_STA";
+      ss2<<FOLDER_PATH<< "TWT_STA";
       wifiPhy_twt.EnablePcap (ss2.str(), staWiFiDevice);
       // ss3<<FOLDER_PATH<< LOGNAME_PREFIX <<"_otherSTA";
       // wifiPhy.EnablePcap (ss3.str(), otherStaWiFiDevices);
@@ -1222,9 +1204,9 @@ if (enable_throughput_trace){
     {
       std::stringstream ss1, ss2, ss4;
       wifiPhy_psm.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-      ss1<<FOLDER_PATH<< LOGNAME_PREFIX <<"_AP";
+      ss1<<FOLDER_PATH<< "WiFiPSM_AP";
       wifiPhy_psm.EnablePcap (ss1.str(), apWiFiDevice);
-      ss2<<FOLDER_PATH<< LOGNAME_PREFIX <<"_STA";
+      ss2<<FOLDER_PATH<< "WiFiPSM_STA";
       wifiPhy_psm.EnablePcap (ss2.str(), staWiFiDevice);
       // ss3<<FOLDER_PATH<< LOGNAME_PREFIX <<"_otherSTA";
       // wifiPhy.EnablePcap (ss3.str(), otherStaWiFiDevices);
@@ -1259,7 +1241,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-//Simulator::Schedule(Seconds(8.0), &callbackfunctions);
+  //Simulator::Schedule(Seconds(0.0), &callbackfunctions);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
@@ -1544,9 +1526,9 @@ std::cout<<"Node's Positions:\n\n";
   DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
 
   average_sta_energy = average_sta_energy/StaCount;
-  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << StaCount << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
+  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " <<  packetsPerSecond << ", " << StaCount << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
 
-  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << StaCount << packetsPerSecond << ", " << StaCount << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
+  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
   
 
   allTxtime.clear(); //all transsmission time
