@@ -129,7 +129,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 //-**************************************************************************
 
 // output file for sta throughput 
@@ -231,19 +231,8 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 }
 
 
-void callbackfunctions(){
-   LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-
-   LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
- //LogComponentEnable ("WifiTxParameters", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
- LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-
-LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-
- LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-
- LogComponentEnable ("MultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
- LogComponentEnable ("WifiRemoteStationManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+void callbackfunctions( WifiHelper wifiHelper){
+  wifiHelper.EnableLogComponents();
 
 }
 
@@ -710,6 +699,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   YansWifiPhyHelper wifiPhy_psm;
 
 
+
   //set up twt channel configuration
   if (enableTwt){
     NS_LOG_UNCOND("set up twt channel configuration");
@@ -730,8 +720,6 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HeMcs7")
                                 , "ControlMode", StringValue ("HeMcs0"));
-  //wifiHelper.EnableLogComponents();
-
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue (2));
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
@@ -1017,7 +1005,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
 
     //Poisson Traffic
     // On time = payload size in bytes * 8/ data rate = 1434*8/100Mbps = 0.00011472 seconds
-    double onTime = 1.0*payloadSize * 8.0/(1.0*uplinkpoissonDataRate);
+    double onTime = (1.0*payloadSize * 8.0/(1.0*uplinkpoissonDataRate)+randTime->GetValue()/100000);
     NS_LOG_UNCOND ("ON time: " << onTime);
         // Off time nean = (Beacon Interval /nPacketsPerBI) - OnTime
         // double offTimeMean = (beaconInterval.GetMicroSeconds()/(packetCountPerBeaconPeriod*1.0e6)) - onTime; 
@@ -1241,7 +1229,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-  //Simulator::Schedule(Seconds(0.0), &callbackfunctions);
+  //Simulator::Schedule(Seconds(7.0), &callbackfunctions, wifiHelper);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
