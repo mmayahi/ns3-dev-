@@ -129,7 +129,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
 //-**************************************************************************
 
 // output file for sta throughput 
