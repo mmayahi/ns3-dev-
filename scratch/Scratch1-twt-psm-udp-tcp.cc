@@ -1005,7 +1005,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
 
     //Poisson Traffic
     // On time = payload size in bytes * 8/ data rate = 1434*8/100Mbps = 0.00011472 seconds
-    double onTime = (1.0*payloadSize * 8.0/(1.0*uplinkpoissonDataRate)+randTime->GetValue()/100000);
+    double onTime = (1.0*payloadSize * 8.0/(1.0*uplinkpoissonDataRate)+randTime->GetValue()/200000);
     NS_LOG_UNCOND ("ON time: " << onTime);
         // Off time nean = (Beacon Interval /nPacketsPerBI) - OnTime
         // double offTimeMean = (beaconInterval.GetMicroSeconds()/(packetCountPerBeaconPeriod*1.0e6)) - onTime; 
@@ -1397,8 +1397,8 @@ std::cout<<"Node's Positions:\n\n";
       }
     // flowmon ------------------------------------------------- 
 
-  avr_ul_pkt_los= (sum_uplink_packet_lost) / (sum_uplink_tx_packet*100) ;
-  avr_dl_pkt_los= (sum_downlink_packet_lost) / (sum_downlink_tx_packet*100) ;
+  avr_ul_pkt_los= (sum_uplink_packet_lost / sum_uplink_tx_packet)*100 ; // packet loss in percent: (lost packets / tx packet) *100
+  avr_dl_pkt_los= (sum_downlink_packet_lost / sum_downlink_tx_packet)*100 ;
   
   avr_ul_dly = (sum_uplink_delay  / (StaCount * 1000 ));
   avr_dl_dly = (sum_downlink_delay  / (StaCount * 1000 ));
