@@ -646,11 +646,11 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
 //  std::cout<<"\nConfigured Udp uplink interPacketInterval: "<<interPacketIntervalUdp.GetMilliSeconds()<<" ms";
 
   
-  // Room dimension in meters - creating uniform random number generator
-  double minX = -25.0;
-  double maxX = 25.0;
-  double minY = -25.0;
-  double maxY = 25.0;
+  // house dimension in meters - creating uniform random number generator house of 400 sqm free space
+  double minX = -20.0;
+  double maxX = 20.0;
+  double minY = -20.0;
+  double maxY = 20.0;
 
   // Other STA positions
   double currentX, currentY;  
@@ -718,8 +718,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   }
       ssid = Ssid ("ns3-80211ax");
   wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
-  wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HeMcs7")
-                                , "ControlMode", StringValue ("HeMcs0"));
+  wifiHelper.SetRemoteStationManager ("ns3::IdealWifiManager");
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue (2));
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
@@ -798,10 +797,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   wifiMac__STA.SetType ("ns3::StaWifiMac",
                     "BE_BlockAckThreshold", UintegerValue (1),
                     "Ssid", SsidValue (ssid));
-  wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-                                      "DataMode", StringValue ("HeMcs7"),
-                                      "ControlMode", StringValue ("HeMcs3"),
-                                      "NonUnicastMode", StringValue ("HeMcs7"));
+  wifiHelper.SetRemoteStationManager ("ns3::IdealWifiManager");
+
   staWiFiDevice = wifiHelper.Install (wifiPhy_psm, wifiMac__STA, StaNodes);
   apWiFiDevice = wifiHelper.Install (wifiPhy_psm, wifiMac_AP, apWifiNode);
 
