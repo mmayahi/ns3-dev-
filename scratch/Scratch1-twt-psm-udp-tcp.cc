@@ -1317,7 +1317,7 @@ std::cout<<"Node's Positions:\n\n";
       //std::cout << "avgDelayMicroSPerPkt: " <<  avgDelayMicroSPerPkt << std::endl;
       double lostPackets = 0 ;
       lostPackets = (i->second.txBytes - i->second.rxBytes) / payloadSize;;
-      double txPackets = (i->second.txPackets)/payloadSize;
+      double txPackets = (i->second.txPackets);
       avgDelay_us[counter] = avgDelayMicroSPerPkt;
       delayHist[counter] = i->second.delayHistogram;
       if (t.destinationAddress ==  apInterface.GetAddress (0) && t.destinationPort == 50000){
