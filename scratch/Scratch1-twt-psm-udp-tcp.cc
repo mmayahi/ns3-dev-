@@ -47,8 +47,8 @@
 #include "ns3/multi-model-spectrum-channel.h"
 #include "ns3/spectrum-wifi-helper.h"
 #include "ns3/show-progress.h"
-
-
+#include "ns3/pointer.h"
+#include<cmath>
 
 //-*********************************
 //#define LOGNAME_PREFIX "WiFiPSM_MU"
@@ -119,8 +119,8 @@ bool twtTriggerBased = false; // Set it to false for contention-based TWT
   // Random seed
   //uint32_t randSeed = 10;     
   //UDP flow - Uplink traffic only
-  uint32_t uplinkpoissonDataRate = 200e3; // more than 111 Mbps uplink 
-  uint32_t downlinkpoissonDataRate = 200e3; // more than 78 Mbps downlink 
+  uint32_t uplinkpoissonDataRate = 30e3; // more than 111 Mbps uplink 
+  uint32_t downlinkpoissonDataRate = 20e3; // more than 78 Mbps downlink 
 
   bool udp = true; //transport protocol: true for udp and false for tcp
   uint32_t staMaxMissedBeacon = 1000;                 // Set the max missed beacons for STA before attempt for reassociation
@@ -153,7 +153,7 @@ static std::map<u_int32_t , double> Txsum; //data transsmission time
 static std::map<u_int32_t , double> Rxsum; //data reception time
 static std::map<u_int32_t , double> TxsigSum; // signaling transmission time
 static std::map<u_int32_t , double> RxsigSum; // signaling reception time
-static std::map<u_int32_t , Vector> NodPos; // positions of the all nodes
+static std::map<u_int32_t , double> StaDis; // STAS's distance from the AP
 
 // Parse context strings of the form "/NodeList/x/DeviceList/x/..." to extract the NodeId integer
 
@@ -234,6 +234,7 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 void callbackfunctions( WifiHelper wifiHelper){
   wifiHelper.EnableLogComponents();
 
+ //LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 }
 
 //-**************************************************************************
@@ -378,26 +379,7 @@ printStaPSM (Ptr<StaWifiMac> staMac)
 //-*******************************************************************
 
 
-/*
-void changePosition (Ptr <Node> staWifiNode, double StaDistance)
-{
-  
-  MobilityHelper mobility2;
-  Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
-  positionAlloc->Add (Vector (StaDistance, 0.0, 0.0));
 
-  mobility2.SetPositionAllocator (positionAlloc);
-  mobility2.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility2.Install (staWifiNode);
-  
-  NS_LOG_INFO("STA position changed now to be " << StaDistance << " meter(s) from the AP.");
-}
-*/
-
- // Trace function for remaining energy at node.
- 
- // \param oldValue Old value
- // \param remainingEnergy New value
  
 void
 RemainingStaEnergy(double oldValue, double remainingEnergy)
@@ -429,19 +411,19 @@ main (int argc, char *argv[])
 {
 
   
-  thrpt <<"thrpt.log";
+  thrpt << FOLDER_PATH<<"thrpt.log";
   std::fstream TH (thrpt.str ().c_str (), std::ios::app);
 
-  ovrhead_nrg <<"ovrhead-nrg.log";
+  ovrhead_nrg <<FOLDER_PATH<<"ovrhead-nrg.log";
   std::fstream ovr_NRG (ovrhead_nrg.str ().c_str (), std::ios::app);
 
-  enrgy <<"nrg.log";
+  enrgy <<FOLDER_PATH<<"nrg.log";
   std::fstream NRG (enrgy.str ().c_str (), std::ios::app);
 
-  dlay <<"dlay.log";
+  dlay <<FOLDER_PATH<<"dlay.log";
   std::fstream DLY (dlay.str ().c_str (), std::ios::app);
  
-  pcktloss <<"pcktloss.log";
+  pcktloss <<FOLDER_PATH<<"pcktloss.log";
   std::fstream PcktLoss (pcktloss.str ().c_str (), std::ios::app);
 
 
@@ -515,6 +497,9 @@ main (int argc, char *argv[])
   else {
     forcePeriodicTraffic = false;
     poissonTraffic = false;
+    uplinkpoissonDataRate = 200e3; // more than 111 Mbps uplink 
+    downlinkpoissonDataRate = 200e3; // more than 78 Mbps downlink 
+
   }
 
 
@@ -593,10 +578,10 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate/StaCount)+"kb/s
 
     // Logging if necessary
   
-  // LogComponentEnable ("ArpCache", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+  // LogComponentEnable ("IdealWifiManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 //
 // LogComponentEnable ("WifiHelper", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ //LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("ApWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("RegularWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiMacQueue", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
@@ -686,47 +671,49 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   NetDeviceContainer staWiFiDevice;
   NetDeviceContainer apWiFiDevice;
 
-
-  WifiHelper wifiHelper;
-
-  Ssid ssid;
-
-  Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel> ();
-  SpectrumWifiPhyHelper wifiPhy_twt; //phisical layer for twt
-    /* Set up Legacy Channel */
-  YansWifiChannelHelper psmwifiChannel;
-    /* Setup Physical Layer for no-twt */
-  YansWifiPhyHelper wifiPhy_psm;
-
-
-
-  //set up twt channel configuration
-  if (enableTwt){
-    NS_LOG_UNCOND("set up twt channel configuration");
-
-      if (!udp){
+  if (!udp){
       //tcpVariant = std::string ("ns3::") + tcpVariant;
   //tcpVariant = std::string ("ns3::TcpNewReno");
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
   /* Configure TCP Options */
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (payloadSize));
   Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue (MilliSeconds (delACKTimer_ms)));
-    // Config::SetDefault ("ns3::TcpSocket::ConnTimeout", TimeValue (Seconds (1)));    //"TCP retransmission timeout when opening connection (seconds) - default 3 seconds"
   Config::SetDefault ("ns3::TcpSocket::ConnTimeout", TimeValue (MilliSeconds(200)));    //"TCP retransmission timeout when opening connection (seconds) - default 3 seconds"
   Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (20));
 
   }
-      ssid = Ssid ("ns3-80211ax");
-  wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
+  WifiHelper wifiHelper;
+
+  Ssid ssid;
+  ssid = Ssid ("ns3-80211ax");
+  Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel> ();
+  SpectrumWifiPhyHelper wifiPhy_twt; //phisical layer for twt
+    /* Set up Legacy Channel */
+  YansWifiChannelHelper psmwifiChannel;
+    /* Setup Physical Layer for no-twt */
+  YansWifiPhyHelper wifiPhy_psm;
   wifiHelper.SetRemoteStationManager ("ns3::IdealWifiManager");
+  
+  //wifiHelper.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HtMcs7"), "ControlMode", StringValue ("HtMcs0"));
+  wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
+  //wifiHelper.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
+
+
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::Exponent", DoubleValue (2));
+  //set up twt channel configuration
+  if (enableTwt){
+    NS_LOG_UNCOND("set up twt channel configuration");
+  ///wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
   Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
   Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
+  Config::SetDefault("ns3::TableBasedErrorRateModel::FallbackErrorRateModel", PointerValue(CreateObject<NistErrorRateModel>()));
 
-
-
+/*  Ptr<PhasedArrayModel> txAntenna = CreateObjectWithAttributes<UniformPlanarArray> ("NumColumns", UintegerValue (txAntennaElements [0]),
+                                                                                    "NumRows", UintegerValue (txAntennaElements [1]),
+                                                                                    "AntennaElement", PointerValue(CreateObject<IsotropicAntennaModel> ()));
+*/
   wifiMac_AP.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
                                 "EnableUlOfdma", BooleanValue (true),
                                 "EnableBsrp", BooleanValue (false),
@@ -751,41 +738,21 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
    // Set guard interval and MPDU buffer size
   Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/GuardInterval", TimeValue (NanoSeconds (gi)));
   Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/MpduBufferSize", UintegerValue (useExtendedBlockAck ? 256 : 64));
-
-    // Set max missed beacons at STAs to avoid dis-association
-  for (u_int32_t ii = 0; ii < StaCount; ii++)
-  {
-    
-    std::stringstream nodeIndexStringTemp, maxBcnStr, advWakeStr;
-    nodeIndexStringTemp << StaNodes.Get(ii)->GetId();
-    maxBcnStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons";
-    advWakeStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/AdvanceWakeupPS";
-
-    Config::Set (maxBcnStr.str(), UintegerValue(staMaxMissedBeacon));
-    Config::Set (advWakeStr.str(), TimeValue(AdvanceWakeupPS));
-
-  }
-  }
+}
+ 
   //set up non-twt channel configuration
   else{
   NS_LOG_UNCOND ("set up non-twt channel configuration");
-  ssid = Ssid ("network");
-  if (!udp){
-      //tcpVariant = std::string ("ns3::") + tcpVariant;
-  //tcpVariant = std::string ("ns3::TcpNewReno");
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
-  /* Configure TCP Options */
-  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (payloadSize));
-  Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue (MilliSeconds (delACKTimer_ms)));
-
-  }
+  //wifiHelper.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
   Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
   Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
-  wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   psmwifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   psmwifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (2.4e9));
+  wifiPhy_psm.Set ("ChannelSettings", StringValue ("{0, 20, BAND_2_4GHZ, 0}"));
   wifiPhy_psm.SetChannel (psmwifiChannel.Create ());
+
   wifiPhy_psm.SetErrorRateModel ("ns3::YansErrorRateModel");
+  //wifiMac_AP.SetAckManager("ns3::WifiDefaultAckManager", "DlMuAckSequenceType", EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
 
   wifiMac_AP.SetType ("ns3::ApWifiMac",
                     "EnableBeaconJitter", BooleanValue (false),
@@ -797,28 +764,42 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   wifiMac__STA.SetType ("ns3::StaWifiMac",
                     "BE_BlockAckThreshold", UintegerValue (1),
                     "Ssid", SsidValue (ssid));
-  wifiHelper.SetRemoteStationManager ("ns3::IdealWifiManager");
-
   staWiFiDevice = wifiHelper.Install (wifiPhy_psm, wifiMac__STA, StaNodes);
   apWiFiDevice = wifiHelper.Install (wifiPhy_psm, wifiMac_AP, apWifiNode);
 
   Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/DtimPeriod", UintegerValue(3));
+  Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferSize", QueueSizeValue(QueueSize ("678p")));
+  Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferDropDelay", TimeValue (MilliSeconds (1123)));
 
 
   }
  
+   // Set max missed beacons at STAs to avoid dis-association
+  for (u_int32_t ii = 0; ii < StaCount; ii++)
+  {
+    
+    std::stringstream nodeIndexStringTemp, maxBcnStr, advWakeStr;
+    nodeIndexStringTemp << StaNodes.Get(ii)->GetId();
+    maxBcnStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/MaxMissedBeacons";
+    advWakeStr << "/NodeList/" << nodeIndexStringTemp.str() << "/DeviceList/0/$ns3::WifiNetDevice/Mac/$ns3::RegularWifiMac/$ns3::StaWifiMac/AdvanceWakeupPS";
 
+    Config::Set (maxBcnStr.str(), UintegerValue(staMaxMissedBeacon));
+    Config::Set (advWakeStr.str(), TimeValue(AdvanceWakeupPS));
+
+  
+  }
 
 // Enable / disable PSM and sleep state using MAC attribute change - through a function - not directly changing the MAC attribute 
   if (enablePSM_flag)
-  {
+  {  
+
     for (u_int32_t ii = 0; ii < StaCount ; ii++)
     {
       Ptr<WifiNetDevice> device = staWiFiDevice.Get(ii)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
       Ptr<WifiMac> staMacTemp = device->GetMac ();
       Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
 
-      Simulator::Schedule (Seconds (PSM_activation_time), &changeStaPSM, staMac, true);
+      Simulator::Schedule (Seconds (PSM_activation_time)+ MilliSeconds(10*ii), &changeStaPSM, staMac, true);
     }
   }
   
@@ -888,7 +869,6 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
 
   positionAlloc->Add (Vector (0.0, 0.0, 0.0));
-  NodPos[0]= Vector(0.0, 0.0, 0.0);
 //  std::cout<<"Positions:\n";
   for (uint32_t ii = 0; ii <StaCount ; ii++)
   {
@@ -896,8 +876,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
     currentY = yCoordinateRand->GetValue ();
   //  std::cout<<"\totherSTA "<<ii<<" : ["<< currentX<<", "<<currentY <<", 0.0 ];\n";
     positionAlloc->Add (Vector (currentX, currentY, 0.0));
-    NodPos[ii+1]= Vector(currentX, currentY, 0.0);
-   // NS_LOG_UNCOND ("STA " << ii << " position: (" <<  currentX << "," << currentY << "," << "0.0)");
+    StaDis[ii]= sqrt(pow(currentX, 2) + pow(currentY, 2));
+    //NS_LOG_UNCOND ("STA " << ii << " distance from AP is: " << StaDis[ii]) ;
 
   }
   
@@ -1041,7 +1021,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
        if (enableUplink){
         NS_LOG_UNCOND ("UP LINK Installed");
         uint16_t port = 50000;
-
+        //ping the server(10.1.1.1) from all STAs
+        V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
       if (udp)
           {
           //UDP flow
@@ -1049,8 +1030,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
           PacketSinkHelper sinkHelper ("ns3::UdpSocketFactory", InetSocketAddress ( apInterface.GetAddress (0), port));
           ApplicationContainer tempsinkApp;
           tempsinkApp = sinkHelper.Install (apWifiNode);
-          //sink = StaticCast<PacketSink> (sinkApp.Get (0));
           sinkApps.Start (Seconds (0.0));
+          sinkApps.Add(tempsinkApp);
           OnOffHelper onoff ("ns3::UdpSocketFactory", (InetSocketAddress ( apInterface.GetAddress (0), port)));
           onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
           onoff.SetAttribute ("OffTime", StringValue (offTimeString));
@@ -1058,8 +1039,6 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
           onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
                 
           
-        //ping the server(10.1.1.1) from all STAs
-        V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
         for (uint32_t appcount =0 ; appcount < StaCount ; appcount++){
         ApplicationContainer clientApp = onoff.Install (StaNodes.Get(appcount));
         clientApp.Start (Seconds(2 + randTime->GetValue()));
@@ -1068,8 +1047,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
         pinger.Start (Seconds (1.0 ) + MilliSeconds(10*appcount));
         pinger.Stop (Seconds (2.0));
          }
-        sinkApps.Add(tempsinkApp);
-        Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
+
         }
 
         else
@@ -1080,6 +1058,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
         ApplicationContainer tempsinkApp;
         tempsinkApp = sinkHelper.Install (apWifiNode);
         tempsinkApp.Start (Seconds (0.0));
+        sinkApps.Add(tempsinkApp);
         OnOffHelper onoff ("ns3::TcpSocketFactory", InetSocketAddress (apInterface.GetAddress(0), port));
         onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
         onoff.SetAttribute ("OffTime", StringValue (offTimeString));
@@ -1089,16 +1068,12 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
         ApplicationContainer clientApp = onoff.Install (StaNodes.Get(appcount));
         clientApp.Start (Seconds(2 + randTime->GetValue()));
         clientApp.Stop (Seconds (simulationTime + 2));
-        }
-        sinkApps.Add(tempsinkApp);
-      }  
-        //ping the server(10.1.1.1) from all STAs
-        V4PingHelper ping = V4PingHelper (apInterface.GetAddress (0));
-        ApplicationContainer pinger = ping.Install(StaNodes);
-        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        ApplicationContainer pinger = ping.Install(StaNodes.Get(appcount));
+        pinger.Start (Seconds (1.0) + MilliSeconds(10*appcount));
         pinger.Stop (Seconds (2.0));
+        }
+      }          
         Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
-      
     }
   Simulator::Schedule (Seconds (0.1), &Ipv4GlobalRoutingHelper::PopulateRoutingTables);
 
@@ -1132,10 +1107,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
         //ping the servers(10.0.0.*) from the remote server
         V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
         ApplicationContainer pinger = ping.Install(apWifiNode);
-        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        pinger.Start (Seconds (1.0) + MilliSeconds(10*in));
         pinger.Stop (Seconds (2.0));
-        Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
-
         }  
       }
         else{
@@ -1155,17 +1128,15 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
         clientApp.Start (Seconds(2 +  randTime->GetValue()));
         clientApp.Stop (Seconds (simulationTime + 2));
 
-
         //ping the servers(10.0.0.*) from the remote server
         V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
         ApplicationContainer pinger = ping.Install(apWifiNode);
-        pinger.Start (Seconds (1.0 + randTime->GetValue()/2));
+        pinger.Start (Seconds (1.0) + MilliSeconds(10*in));
         pinger.Stop (Seconds (2.0));
-        Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
-
         }
-
+      Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
     }
+
   }
   
 if (enable_throughput_trace){
@@ -1196,7 +1167,17 @@ if (enable_throughput_trace){
       // ss3<<FOLDER_PATH<< LOGNAME_PREFIX <<"_otherSTA";
       // wifiPhy.EnablePcap (ss3.str(), otherStaWiFiDevices);
     }
-
+ if (pcapTracing && !enablePSM_flag && !enableTwt)
+    {
+      std::stringstream ss1, ss2, ss4;
+      wifiPhy_psm.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
+      ss1<<FOLDER_PATH<< "WiFiActive_AP";
+      wifiPhy_psm.EnablePcap (ss1.str(), apWiFiDevice);
+      ss2<<FOLDER_PATH<< "WiFiActive_STA";
+      wifiPhy_psm.EnablePcap (ss2.str(), staWiFiDevice);
+      // ss3<<FOLDER_PATH<< LOGNAME_PREFIX <<"_otherSTA";
+      // wifiPhy.EnablePcap (ss3.str(), otherStaWiFiDevices);
+    }
    if(enablePhyStateTrace){
   //phy state
 
@@ -1226,7 +1207,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-  //Simulator::Schedule(Seconds(7.0), &callbackfunctions, wifiHelper);
+  //Simulator::Schedule(Seconds(8.0), &callbackfunctions, wifiHelper);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
@@ -1284,9 +1265,9 @@ if (enableFlowMon)
     std::cout<<"\nFlow Level Stats:\n";
     std::cout<<"-----------------\n\n";
 
-std::cout<<"Node's Positions:\n\n";
+std::cout<<"STA distance from AP:\n\n";
 
-    for (const auto & [key, value] : NodPos)
+    for (const auto & [key, value] : StaDis)
         std::cout <<"["<<key<<"] , " << value << "\n";
     std::cout<<"-----------------\n\n";
 
@@ -1462,7 +1443,7 @@ std::cout<<"Node's Positions:\n\n";
   }
 */
 
-    for (uint32_t out = 2 ; out <= StaCount+2 ; out ++){
+    for (uint32_t out = 1 ; out <= StaCount+1 ; out ++){
      //node 0 is the remote server , node 1 is the AP so the STAs start from node id 2
     average_sta_tx_signaling += (TxsigSum[out]);
     average_sta_rx_signaling += (RxsigSum[out]);
@@ -1494,7 +1475,7 @@ std::cout<<"Node's Positions:\n\n";
 
 
   
-  ap_ovrhd_energy = ((TxsigSum [1]) * 0.668 * 12.2) + ((RxsigSum[1]) * 0.568 *12.2);
+  ap_ovrhd_energy = ((TxsigSum [0]) * 0.668 * 12.2) + ((RxsigSum[0]) * 0.568 *12.2);
   //average overhead energy at STAs = overhead tx time * power at tx mode + overhead rx time * power at rx mode
   sta_ovrhd_energy = (average_sta_tx_signaling * 0.801 * 4.9) + (average_sta_rx_signaling * 0.515 * 4.9);
   //std::cout << "\nAverage throughput at STAs is: " << (average_sta_throughput) / (StaCount) <<" Mbit/s" << std::endl;
@@ -1504,18 +1485,20 @@ std::cout<<"Node's Positions:\n\n";
   double ap_throughput= sum_throughput_at_ap / StaCount;
   //flowmon.SerializeToXmlFile(("MU_logs/flomon.dat"), true, true);
 
-  TH << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << average_sta_throughput/1000<< ", " << ap_throughput/1000<< std::endl;
-  
-  PcktLoss << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << avr_ul_pkt_los<< ", " << avr_dl_pkt_los<< std::endl;
-  
-  DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
-
+  TH << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount; for (const auto & [key, value] : StaDis){TH<<", " << value ;} TH <<", " << average_sta_throughput/1000<< ", " << ap_throughput/1000<< std::endl;
+  PcktLoss << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount; for (const auto & [key, value] : StaDis){PcktLoss<<", " << value;} PcktLoss << ", " << avr_ul_pkt_los<< ", " << avr_dl_pkt_los<< std::endl;
+  DLY << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount ; for (const auto & [key, value] : StaDis){ DLY <<", " << value;} DLY << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
   average_sta_energy = average_sta_energy/StaCount;
-  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " <<  packetsPerSecond << ", " << StaCount << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
+  NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " <<  packetsPerSecond << ", " << StaCount ; for (const auto & [key, value] : StaDis){NRG <<", " << value;} NRG  << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
+  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount ; for (const auto & [key, value] : StaDis){ovr_NRG <<", " << value;} ovr_NRG << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
 
-  ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
-  
 
+/*  std::cout<< "TH " << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount; for (const auto & [key, value] : StaDis){std::cout <<", " << value ;} std::cout <<", " << average_sta_throughput/1000<< ", " << ap_throughput/1000<< std::endl;
+ std::cout<< "PcktLoss " << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount; for (const auto & [key, value] : StaDis){std::cout <<", " << value ;} std::cout <<", " << avr_ul_pkt_los<< ", " << avr_dl_pkt_los<< std::endl;
+  std::cout<<"DLY "<< link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount ;for (const auto & [key, value] : StaDis){std::cout <<", " << value ;} std::cout << ", " << avr_ul_dly<< ", " << avr_dl_dly<< std::endl;
+  std::cout<<"NRG "<< link << ", " << power << ", " << traffic << ", " << udp << ", " <<  packetsPerSecond << ", " << StaCount; for (const auto & [key, value] : StaDis){std::cout <<", " << value ;} std::cout <<", " << average_sta_energy<< ", " << ap_energy<< std::endl;
+  std::cout<< "ovr_NRG "<< link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount; for (const auto & [key, value] : StaDis){std::cout <<", " << value;} std::cout << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
+*/
   allTxtime.clear(); //all transsmission time
   allRxtime.clear(); //all reception time
   allIdletime.clear(); //all idle time
@@ -1525,7 +1508,7 @@ std::cout<<"Node's Positions:\n\n";
   Rxsum.clear(); //data reception time
   TxsigSum.clear(); //signaling transsmission time
   RxsigSum.clear(); //signaling reception time
-  NodPos.clear(); // Node positions
+  StaDis.clear(); // Node positions
 /*
          }
       }

@@ -428,7 +428,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{3};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 
 int
 main (int argc, char *argv[])
