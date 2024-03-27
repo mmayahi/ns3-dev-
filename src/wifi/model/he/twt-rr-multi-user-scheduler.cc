@@ -174,8 +174,15 @@ TwtRrMultiUserScheduler::SelectTxFormat (void)
   // if (mpdu != 0 && GetWifiRemoteStationManager ()->GetTwtAgreement (mpdu->GetHeader ().GetAddr1 ()))
   if (mpdu != 0)
   {
-    NS_LOG_DEBUG ("MPDUs queued. Trying DL_MU_TX");
-    return TrySendingDlMuPpdu ();
+    const WifiMacHeader &header = mpdu->GetHeader ();
+    bool isQosData = header.IsQosData ();
+    if (isQosData)
+    {
+      NS_LOG_DEBUG ("MPDUs queued. Trying DL_MU_TX");
+      return TrySendingDlMuPpdu ();
+    }
+    NS_LOG_DEBUG ("MPDUs queued SU TX");
+    return TxFormat::SU_TX;
   }
 
   if (m_lastTxFormat == DL_MU_TX)
@@ -884,6 +891,13 @@ TwtRrMultiUserScheduler::TrySendingDlMuPpdu (void)
                   // station, so that the TX duration can be correctly computed.
                   WifiTxVector suTxVector = GetWifiRemoteStationManager ()->GetDataTxVector (mpdu->GetHeader ()),
                                txVectorCopy = m_txParams.m_txVector;
+
+                  if (suTxVector.GetMode().GetModulationClass () < WIFI_MOD_CLASS_HE)
+                  {
+                    
+                    NS_LOG_DEBUG ("The reference txvector uses basic mode: return SU_TX");
+                    return SU_TX;
+                  }
 
                   m_txParams.m_txVector.SetHeMuUserInfo (staIt->aid,
                                                          {{currRuType, 1, false},

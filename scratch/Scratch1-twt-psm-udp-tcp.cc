@@ -129,7 +129,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 //-**************************************************************************
 
 // output file for sta throughput 
@@ -172,9 +172,10 @@ static void PingRtt (std::string context, Time rtt)
 }
 
 void 
-initiateTwtAtAp (Ptr<ApWifiMac> apMac, Mac48Address staMacAddress, Time twtWakeInterval, Time nominalWakeDuration, Time nextTwt)
+initiateTwtAtAp (Ptr<WifiNetDevice> apWifiDevice, Mac48Address staMacAddress, Time twtWakeInterval, Time nominalWakeDuration, Time nextTwt)
 
 {
+  Ptr<ApWifiMac> apMac = DynamicCast<ApWifiMac> (apWifiDevice->GetMac ());
   /**
    * @brief Set TWT schedule at the AP - TWT SP will be scheduled at nextTwt after next beacon generation
    * 
@@ -233,6 +234,9 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 
 void callbackfunctions( WifiHelper wifiHelper){
   wifiHelper.EnableLogComponents();
+//LogComponentEnable ("IdealWifiManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+
+//LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 
  //LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 }
@@ -578,7 +582,7 @@ std::string downlinkstr = std::to_string(downlinkpoissonDataRate/StaCount)+"kb/s
 
     // Logging if necessary
   
-  // LogComponentEnable ("IdealWifiManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+//LogComponentEnable ("IdealWifiManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 //
 // LogComponentEnable ("WifiHelper", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  //LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
@@ -599,7 +603,7 @@ LogComponentEnable ("QosFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_P
 //LogComponentEnable ("HeFrameExchangeManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("PhyEntity", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiPhyStateHelper", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-// LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+//LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("MultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiDefaultAckManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 // LogComponentEnable ("WifiAckManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
@@ -706,14 +710,11 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
     NS_LOG_UNCOND("set up twt channel configuration");
   ///wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
-  Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
-  Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
+  //Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
+  //Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
   Config::SetDefault("ns3::TableBasedErrorRateModel::FallbackErrorRateModel", PointerValue(CreateObject<NistErrorRateModel>()));
 
-/*  Ptr<PhasedArrayModel> txAntenna = CreateObjectWithAttributes<UniformPlanarArray> ("NumColumns", UintegerValue (txAntennaElements [0]),
-                                                                                    "NumRows", UintegerValue (txAntennaElements [1]),
-                                                                                    "AntennaElement", PointerValue(CreateObject<IsotropicAntennaModel> ()));
-*/
+
   wifiMac_AP.SetMultiUserScheduler ("ns3::TwtRrMultiUserScheduler",
                                 "EnableUlOfdma", BooleanValue (true),
                                 "EnableBsrp", BooleanValue (false),
@@ -818,8 +819,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   // ----------------------------------------------------------------------------
   // Setting up TWT
   Ptr<WifiNetDevice> apWifiDevice = apWiFiDevice.Get(0)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
-  Ptr<WifiMac> apMacTemp = apWifiDevice->GetMac ();
-  Ptr<ApWifiMac> apMac = DynamicCast<ApWifiMac> (apMacTemp);
+  //Ptr<WifiMac> apMacTemp = apWifiDevice->GetMac ();
+  //Ptr<ApWifiMac> apMac = DynamicCast<ApWifiMac> (apMacTemp);
   //NS_LOG_UNCOND("apMac->GetAddress() " << apMac->GetAddress());
 
   // Mac48Address apMacAddress = apMac->GetAddress();
@@ -853,7 +854,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
       " ms after next beacon;\nTWT Wake Interval = "<< twtWakeInterval.GetMicroSeconds()/1000.0<<
       " ms;\nTWT Nominal Wake Duration = "<< twtNominalWakeDuration.GetMicroSeconds()/1000.0<<" ms;\n\n\n";
 
-      Simulator::Schedule (scheduleTwtAgreement, &initiateTwtAtAp, apMac, staMac->GetAddress(), twtWakeInterval, twtNominalWakeDuration, delta);
+      Simulator::Schedule (scheduleTwtAgreement, &initiateTwtAtAp, apWifiDevice, staMac->GetAddress(), twtWakeInterval, twtNominalWakeDuration, delta);
 
     }
   
@@ -1207,7 +1208,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-  //Simulator::Schedule(Seconds(8.0), &callbackfunctions, wifiHelper);
+  //Simulator::Schedule(Seconds(12.0), &callbackfunctions, wifiHelper);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
