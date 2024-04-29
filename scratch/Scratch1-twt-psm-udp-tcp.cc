@@ -658,7 +658,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   Ptr<Node> MainUDPServerNode = serverNodes.Get (0);
 */
   NodeContainer ApNodes;
-  ApNodes.Create (1);     // First node = STA
+  ApNodes.Create (1);    
   Ptr<Node> apWifiNode = ApNodes.Get (0);
   
 
@@ -679,13 +679,14 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
       //tcpVariant = std::string ("ns3::") + tcpVariant;
   //tcpVariant = std::string ("ns3::TcpNewReno");
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
-  /* Configure TCP Options */
+  // Configure TCP Options 
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (payloadSize));
   Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue (MilliSeconds (delACKTimer_ms)));
   Config::SetDefault ("ns3::TcpSocket::ConnTimeout", TimeValue (MilliSeconds(200)));    //"TCP retransmission timeout when opening connection (seconds) - default 3 seconds"
   Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (20));
 
   }
+
   WifiHelper wifiHelper;
 
   Ssid ssid;
@@ -710,8 +711,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
     NS_LOG_UNCOND("set up twt channel configuration");
   ///wifiHelper.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (65535));
-  //Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
-  //Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
+  Config::SetDefault ("ns3::WifiMacQueue::MaxSize", QueueSizeValue(QueueSize ("10000p")));
+  Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (MilliSeconds (60000)));
   Config::SetDefault("ns3::TableBasedErrorRateModel::FallbackErrorRateModel", PointerValue(CreateObject<NistErrorRateModel>()));
 
 
@@ -750,17 +751,16 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   psmwifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   psmwifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel", "Frequency", DoubleValue (2.4e9));
   wifiPhy_psm.Set ("ChannelSettings", StringValue ("{0, 20, BAND_2_4GHZ, 0}"));
-  wifiPhy_psm.SetChannel (psmwifiChannel.Create ());
-
   wifiPhy_psm.SetErrorRateModel ("ns3::YansErrorRateModel");
-  //wifiMac_AP.SetAckManager("ns3::WifiDefaultAckManager", "DlMuAckSequenceType", EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
+  wifiMac_AP.SetAckManager("ns3::WifiDefaultAckManager", "DlMuAckSequenceType", EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
+  wifiPhy_psm.SetChannel (psmwifiChannel.Create ());
 
   wifiMac_AP.SetType ("ns3::ApWifiMac",
                     "EnableBeaconJitter", BooleanValue (false),
                     "BE_MaxAmpduSize", UintegerValue (ampduLimitBytes),
                     "BsrLifetime", TimeValue (MilliSeconds (bsrLife_ms)),
-                    "BE_BlockAckThreshold", UintegerValue (5),
-                    "EnableUApsd", BooleanValue(true),                    
+                    "BE_BlockAckThreshold", UintegerValue (1),
+                    "EnableUApsd", BooleanValue(false),                    
                     "Ssid", SsidValue (ssid));
   wifiMac__STA.SetType ("ns3::StaWifiMac",
                     "BE_BlockAckThreshold", UintegerValue (1),
@@ -772,6 +772,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferSize", QueueSizeValue(QueueSize ("678p")));
   Config::Set ("/NodeList/0/DeviceList/1/$ns3::WifiNetDevice/Mac/$ns3::ApWifiMac/PsUnicastBufferDropDelay", TimeValue (MilliSeconds (1123)));
 
+  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/GuardInterval", TimeValue (NanoSeconds (gi)));
+  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/MpduBufferSize", UintegerValue (useExtendedBlockAck ? 256 : 64));
 
   }
  
@@ -799,6 +801,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
       Ptr<WifiNetDevice> device = staWiFiDevice.Get(ii)->GetObject<WifiNetDevice> ();    //This returns the pointer to the object - works for all functions from WifiNetDevice
       Ptr<WifiMac> staMacTemp = device->GetMac ();
       Ptr<StaWifiMac> staMac = DynamicCast<StaWifiMac> (staMacTemp);
+      NS_LOG_UNCOND("staMac->GetAddress() " << staMac->GetAddress());
 
       Simulator::Schedule (Seconds (PSM_activation_time)+ MilliSeconds(10*ii), &changeStaPSM, staMac, true);
     }
@@ -1208,7 +1211,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-  //Simulator::Schedule(Seconds(12.0), &callbackfunctions, wifiHelper);
+//Simulator::Schedule(Seconds(7.5), &callbackfunctions, wifiHelper);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;

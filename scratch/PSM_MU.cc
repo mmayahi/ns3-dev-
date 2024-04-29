@@ -300,7 +300,7 @@ main (int argc, char *argv[])
   std::string phyRate_STA_control = "HtMcs3";  
   std::string phyRate_AP_control = "HtMcs3";  
 
-  bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+  bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 
 
   uint32_t staMaxMissedBeacon = 10;                 // Set the max missed beacons for STA before attempt for reassociation

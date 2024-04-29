@@ -44,6 +44,7 @@
 #include "wifi-twt-agreement.h"
 
 #include "ns3/he-frame-exchange-manager.h"
+#include <bitset>
 
 namespace ns3 {
 
@@ -734,7 +735,7 @@ Tim ApWifiMac::GetTim (void) const
   bool isMulticastBuffered = (m_dtimCount == 0 ) && ( m_psMulticastBuffer->GetNBytes() > 0 );    
   // If there are no PS stations or if the unicast buffer m_psUnicastBuffer is empty or if APSD is enabled -- #shyam it is assumed that all data is BE class
   // if (m_stationManager->GetNStaInPs() == 0 || m_psUnicastBuffer->IsEmpty())
-  NS_LOG_DEBUG ("For AP, m_psmOrApsd = "<<m_psmOrApsd);
+  NS_LOG_DEBUG ("For AP, m_psmOrApsd = "<<m_psmOrApsd<<", nStaPS = "<<m_stationManager->GetNStaInPs()<<", psUnicast = "<<m_psUnicastBuffer->IsEmpty());
   if (m_stationManager->GetNStaInPs() == 0 || m_psUnicastBuffer->IsEmpty() || m_psmOrApsd)
   {
     Tim timElement (m_dtimCount, m_dtimPeriod, isMulticastBuffered);
@@ -766,17 +767,17 @@ Tim ApWifiMac::GetTim (void) const
     tempMask = 1 << sta.first % 8;
     fullAidBitmap[int(sta.first/8)] |= tempMask;
 
-    // NS_LOG_DEBUG ("Unicase PS Buffered packets found for STA with AID: "<<sta.first);
-    // NS_LOG_DEBUG ("Full AID map is set at byte number: "<< unsigned(sta.first/8) <<" with bit mask: "<<std::bitset<8>(tempMask) );
-    // NS_LOG_DEBUG ("Full AID map at byte number: "<<sta.first/8 <<" is now: "<<std::bitset<8>( fullAidBitmap[int(sta.first/8)] ));
+    NS_LOG_DEBUG ("Unicase PS Buffered packets found for STA with AID: "<<sta.first);
+    NS_LOG_DEBUG ("Full AID map is set at byte number: "<< unsigned(sta.first/8) <<" with bit mask: "<<std::bitset<8>(tempMask) );
+    NS_LOG_DEBUG ("Full AID map at byte number: "<<sta.first/8 <<" is now: "<<std::bitset<8>( fullAidBitmap[int(sta.first/8)] ));
 
 
 
     }
     
   }
-  // NS_LOG_DEBUG ("minAidInBuffer is "<<minAidInBuffer);
-  // NS_LOG_DEBUG ("maxAidInBuffer is "<<maxAidInBuffer);
+  NS_LOG_DEBUG ("minAidInBuffer is "<<minAidInBuffer);
+  NS_LOG_DEBUG ("maxAidInBuffer is "<<maxAidInBuffer);
  
 
   Tim timElement (m_dtimCount, m_dtimPeriod, isMulticastBuffered, fullAidBitmap, minAidInBuffer, maxAidInBuffer);
@@ -1681,6 +1682,7 @@ ApWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
       NS_ASSERT_MSG (m_edca[AC_BE]->PeekNextMpdu(0, from) == 0, "MAC AC_BE queue at AP was not empty for STA switching from CAM to PSM");
     }
     // PSM state at AP is changed based on UL packets only if there is no TWT agreement for that STA
+    NS_LOG_DEBUG("m_stationManager->SetPSM (hdr->GetAddr2 (), hdr->IsPowerMgt()): " << hdr->GetAddr2 () << ", "<< hdr->IsPowerMgt());
     m_stationManager->SetPSM (hdr->GetAddr2 (), hdr->IsPowerMgt());
   }
 

@@ -1573,7 +1573,7 @@ WifiRemoteStationManager::SetTwtAwakeForSp (Mac48Address address, bool twtAwakeF
 uint16_t 
 WifiRemoteStationManager::GetNStaInPs (void) const
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this<<m_nStaInPs);
   return m_nStaInPs;
 }
 

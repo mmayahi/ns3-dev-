@@ -175,11 +175,11 @@ StaWifiMac::IsAidInTim (Tim tim) const
   uint32_t N1 = (tim.GetBitmapControl()>>1) << 1;   // Getting rid of the last bit. Making 7 bits to 8 bits by left shift is same as multiplying by 2
   uint32_t N2 = tim.GetInformationFieldSize() - 4 + N1;
 
-  // NS_LOG_DEBUG ("N1 ="<<unsigned (N1)<<"; N2 ="<<unsigned (N2));
+  NS_LOG_DEBUG ("N1 ="<<unsigned (N1)<<"; N2 ="<<unsigned (N2));
   uint8_t* pvb = (uint8_t*)malloc (tim.GetInformationFieldSize() - 3);
   pvb = tim.GetPVB();
 
-  // NS_LOG_DEBUG ("PVB[0] as int: "<< unsigned(pvb[0]));
+  NS_LOG_DEBUG ("PVB[0] as int: "<< unsigned(pvb[0]));
 
   // Create fullAidBitmap
   uint8_t fullAidBitmap [251] = {0};    // All entries set to zero
@@ -189,15 +189,15 @@ StaWifiMac::IsAidInTim (Tim tim) const
     fullAidBitmap[i] = pvb[i-N1];
   }
 
-  // NS_LOG_DEBUG ("fullAidBitmap[0]: "<< unsigned(fullAidBitmap[0]));
-  // NS_LOG_DEBUG("My GetAssociationId()::"<<GetAssociationId());
+  NS_LOG_DEBUG ("fullAidBitmap[0]: "<< unsigned(fullAidBitmap[0]));
+  NS_LOG_DEBUG("My GetAssociationId()::"<<GetAssociationId());
 
   uint8_t myOctet = 0;
   
   myOctet = fullAidBitmap[GetAssociationId()/8];
-  // NS_LOG_DEBUG("myOctet::"<<unsigned(myOctet));
+  NS_LOG_DEBUG("myOctet::"<<unsigned(myOctet));
   myOctet = myOctet >> GetAssociationId()%8;
-  // NS_LOG_DEBUG("myOctet::"<<unsigned(myOctet));
+  NS_LOG_DEBUG("myOctet::"<<unsigned(myOctet));
   if ((myOctet & 0x01) == 1)
   {
     NS_LOG_DEBUG ("Found my AID in TIM");
