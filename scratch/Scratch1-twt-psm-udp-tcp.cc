@@ -53,7 +53,7 @@
 
 //-*********************************
 //#define LOGNAME_PREFIX "WiFiPSM_MU"
-#define FOLDER_PATH "MU_logs/"
+//#define FOLDER_PATH "MU_logs/"
 
 NS_LOG_COMPONENT_DEFINE ("WiFiPSM");
 
@@ -120,7 +120,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
 //-**************************************************************************
 
 // output file for sta throughput 
@@ -314,19 +314,19 @@ int
 main (int argc, char *argv[])
 {
   
-  thrpt << FOLDER_PATH<<"thrpt.log";
+  thrpt <<"thrpt.log";
   std::fstream TH (thrpt.str ().c_str (), std::ios::app);
 
-  ovrhead_nrg <<FOLDER_PATH<<"ovrhead-nrg.log";
+  ovrhead_nrg <<"ovrhead-nrg.log";
   std::fstream ovr_NRG (ovrhead_nrg.str ().c_str (), std::ios::app);
 
-  enrgy <<FOLDER_PATH<<"nrg.log";
+  enrgy <<"nrg.log";
   std::fstream NRG (enrgy.str ().c_str (), std::ios::app);
 
-  dlay <<FOLDER_PATH<<"dlay.log";
+  dlay <<"dlay.log";
   std::fstream DLY (dlay.str ().c_str (), std::ios::app);
  
-  pcktloss <<FOLDER_PATH<<"pcktloss.log";
+  pcktloss <<"pcktloss.log";
   std::fstream PcktLoss (pcktloss.str ().c_str (), std::ios::app);
 
 
@@ -934,9 +934,9 @@ main (int argc, char *argv[])
   {
     std::stringstream ss1, ss2, ss4;
     wifiPhy_twt.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-    ss1<<FOLDER_PATH<< "TWT_AP";
+    ss1<< "TWT_AP";
     wifiPhy_twt.EnablePcap (ss1.str(), apWiFiDevice);
-    ss2<<FOLDER_PATH<< "TWT_STA";
+    ss2<< "TWT_STA";
     wifiPhy_twt.EnablePcap (ss2.str(), staWiFiDevice);
   }
 
@@ -945,18 +945,18 @@ main (int argc, char *argv[])
   {
     std::stringstream ss1, ss2, ss4;
     wifiPhy_psm.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-    ss1<<FOLDER_PATH<< "WiFiPSM_AP";
+    ss1<<"WiFiPSM_AP";
     wifiPhy_psm.EnablePcap (ss1.str(), apWiFiDevice);
-    ss2<<FOLDER_PATH<< "WiFiPSM_STA";
+    ss2<<"WiFiPSM_STA";
     wifiPhy_psm.EnablePcap (ss2.str(), staWiFiDevice);
   }
   if (pcapTracing && !enablePSM_flag && !enableTwt)
   {
     std::stringstream ss1, ss2, ss4;
     wifiPhy_psm.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-    ss1<<FOLDER_PATH<< "WiFiActive_AP";
+    ss1<<"WiFiActive_AP";
     wifiPhy_psm.EnablePcap (ss1.str(), apWiFiDevice);
-    ss2<<FOLDER_PATH<< "WiFiActive_STA";
+    ss2<<"WiFiActive_STA";
     wifiPhy_psm.EnablePcap (ss2.str(), staWiFiDevice);
   }
   if(enablePhyStateTrace)
