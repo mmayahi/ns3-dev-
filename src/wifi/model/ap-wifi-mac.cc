@@ -1681,9 +1681,19 @@ ApWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
       }
       NS_ASSERT_MSG (m_edca[AC_BE]->PeekNextMpdu(0, from) == 0, "MAC AC_BE queue at AP was not empty for STA switching from CAM to PSM");
     }
-    // PSM state at AP is changed based on UL packets only if there is no TWT agreement for that STA
-    NS_LOG_DEBUG("m_stationManager->SetPSM (hdr->GetAddr2 (), hdr->IsPowerMgt()): " << hdr->GetAddr2 () << ", "<< hdr->IsPowerMgt());
-    m_stationManager->SetPSM (hdr->GetAddr2 (), hdr->IsPowerMgt());
+    // Rediet 
+    if (hdr->GetType() == WIFI_MAC_DATA_NULL)
+      {        
+        // PSM state at AP is changed based on UL packets only if there is no TWT agreement for that STA
+        NS_LOG_DEBUG("Received NULL DATA packet from " << hdr->GetAddr2 () << ",with PM flag "<< hdr->IsPowerMgt() << ", set PSM if needed.");
+        m_stationManager->SetPSM (hdr->GetAddr2 (), hdr->IsPowerMgt());
+      }
+    else
+      {
+        std::stringstream tempStream;
+        hdr->Print(tempStream);
+        NS_LOG_DEBUG("Change PS state only on NULL DATA packets, here we have: " << tempStream.str());
+      }
   }
 
 

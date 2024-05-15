@@ -129,7 +129,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 //-**************************************************************************
 
 // output file for sta throughput 
@@ -233,12 +233,14 @@ void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState
 
 
 void callbackfunctions( WifiHelper wifiHelper){
-  wifiHelper.EnableLogComponents();
-//LogComponentEnable ("IdealWifiManager", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ // wifiHelper.EnableLogComponents();
+ LogComponentEnable ("TcpHeader", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("TcpSocketBase", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("TcpSocket", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable ("TcpL4Protocol", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ LogComponentEnable("TcpCongestionOps", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE |LOG_LEVEL_ALL));
+ LogComponentEnable("Socket", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE |LOG_LEVEL_ALL));
 
-//LogComponentEnable ("TwtRrMultiUserScheduler", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
-
- //LogComponentEnable ("StaWifiMac", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
 }
 
 //-**************************************************************************
@@ -684,7 +686,7 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
   Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue (MilliSeconds (delACKTimer_ms)));
   Config::SetDefault ("ns3::TcpSocket::ConnTimeout", TimeValue (MilliSeconds(200)));    //"TCP retransmission timeout when opening connection (seconds) - default 3 seconds"
   Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (20));
-
+  //Config::SetDefault ("ns3::TcpSocket::PersistTimeout", TimeValue (Seconds (1)));
   }
 
   WifiHelper wifiHelper;
@@ -1068,7 +1070,8 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
         onoff.SetAttribute ("OffTime", StringValue (offTimeString));
         onoff.SetAttribute ("DataRate", DataRateValue (DataRate (uplinkstr)));
         onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-        for (uint32_t appcount =0 ; appcount < StaCount ; appcount++){
+        for (uint32_t appcount =0 ; appcount < StaCount ; appcount++)
+        {
         ApplicationContainer clientApp = onoff.Install (StaNodes.Get(appcount));
         clientApp.Start (Seconds(2 + randTime->GetValue()));
         clientApp.Stop (Seconds (simulationTime + 2));
@@ -1091,59 +1094,61 @@ LogComponentEnable ("OriginatorBlockAckAgreement", LogLevel (LOG_PREFIX_TIME | L
         if (udp)
           {
             //Servers and sinks at STAs
-        for(uint32_t in = 0; in < StaCount; in++){          
-          PacketSinkHelper sinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
-          ApplicationContainer tempsinkApp;
-          tempsinkApp = sinkHelper.Install (StaNodes.Get(in));
-          tempsinkApp.Start (Seconds (0.0));
-          sinkApps.Add(tempsinkApp);
-        
-        //Client at remote node
-        OnOffHelper onoff ("ns3::UdpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
-        onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
-        onoff.SetAttribute ("OffTime", StringValue (offTimeString));
-        onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
-        onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-        ApplicationContainer clientApp = onoff.Install (apWifiNode);
-        clientApp.Start (Seconds(2 + randTime->GetValue()));
-        clientApp.Stop (Seconds (simulationTime + 2));
-        
-        //ping the servers(10.0.0.*) from the remote server
-        V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
-        ApplicationContainer pinger = ping.Install(apWifiNode);
-        pinger.Start (Seconds (1.0) + MilliSeconds(10*in));
-        pinger.Stop (Seconds (2.0));
-        }  
-      }
-        else{
-          for(uint32_t in = 0; in < StaCount; in++){          
-          PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
-          ApplicationContainer tempsinkApp;
-          tempsinkApp = sinkHelper.Install (StaNodes.Get(in));
-          tempsinkApp.Start (Seconds (0.0));
-          sinkApps.Add(tempsinkApp);
-        
-        OnOffHelper onoff ("ns3::TcpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
-        onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
-        onoff.SetAttribute ("OffTime", StringValue (offTimeString));
-        onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
-        onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-        ApplicationContainer clientApp = onoff.Install (apWifiNode);
-        clientApp.Start (Seconds(2 +  randTime->GetValue()));
-        clientApp.Stop (Seconds (simulationTime + 2));
+          for(uint32_t in = 0; in < StaCount; in++)
+          {          
+            PacketSinkHelper sinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
+            ApplicationContainer tempsinkApp;
+            tempsinkApp = sinkHelper.Install (StaNodes.Get(in));
+            tempsinkApp.Start (Seconds (0.0));
+            sinkApps.Add(tempsinkApp);
 
-        //ping the servers(10.0.0.*) from the remote server
-        V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
-        ApplicationContainer pinger = ping.Install(apWifiNode);
-        pinger.Start (Seconds (1.0) + MilliSeconds(10*in));
-        pinger.Stop (Seconds (2.0));
+            //Client at remote node
+            OnOffHelper onoff ("ns3::UdpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
+            onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
+            onoff.SetAttribute ("OffTime", StringValue (offTimeString));
+            onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
+            onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+            ApplicationContainer clientApp = onoff.Install (apWifiNode);
+            clientApp.Start (Seconds(2 + randTime->GetValue()));
+            clientApp.Stop (Seconds (simulationTime + 2));
+
+            //ping the servers(10.0.0.*) from the remote server
+            V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
+            ApplicationContainer pinger = ping.Install(apWifiNode);
+            pinger.Start (Seconds (1.0) + MilliSeconds(10*in));
+            pinger.Stop (Seconds (2.0));
+          }  
         }
-      Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
-    }
+        else{
 
-  }
+          for(uint32_t in = 0; in < StaCount; in++)
+          {          
+            PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
+            ApplicationContainer tempsinkApp;
+            tempsinkApp = sinkHelper.Install (StaNodes.Get(in));
+            tempsinkApp.Start (Seconds (0.0));
+            sinkApps.Add(tempsinkApp);
+            
+            OnOffHelper onoff ("ns3::TcpSocketFactory", InetSocketAddress (staInterface.GetAddress(in), port));
+            onoff.SetAttribute ("OnTime",  StringValue (onTimeString));
+            onoff.SetAttribute ("OffTime", StringValue (offTimeString));
+            onoff.SetAttribute ("DataRate", DataRateValue (DataRate (downlinkstr)));
+            onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+            ApplicationContainer clientApp = onoff.Install (apWifiNode);
+            clientApp.Start (Seconds(2 +  randTime->GetValue()));
+            clientApp.Stop (Seconds (simulationTime + 2));
+
+            //ping the servers(10.0.0.*) from the remote server
+            V4PingHelper ping = V4PingHelper (staInterface.GetAddress (in));
+            ApplicationContainer pinger = ping.Install(apWifiNode);
+            pinger.Start (Seconds (1.0) + MilliSeconds(10*in));
+            pinger.Stop (Seconds (2.0));
+          }
+          Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt", MakeCallback (&PingRtt));
+        }
+      }
   
-if (enable_throughput_trace){
+    if (enable_throughput_trace){
   Simulator::Schedule (Seconds (1.0), &CalculateThroughput );
 }
   /* Enable Traces */
@@ -1211,7 +1216,7 @@ if (enable_throughput_trace){
                                                    MakeCallback(&TotalStaEnergy));
     /***************************************************************************/
     }
-//Simulator::Schedule(Seconds(7.5), &callbackfunctions, wifiHelper);
+   //Simulator::Schedule(Seconds(7.5), &callbackfunctions, wifiHelper);
   // If flowmon is needed
   // FlowMonitor setup
   FlowMonitorHelper flowmon;
@@ -1269,7 +1274,7 @@ if (enableFlowMon)
     std::cout<<"\nFlow Level Stats:\n";
     std::cout<<"-----------------\n\n";
 
-std::cout<<"STA distance from AP:\n\n";
+    std::cout<<"STA distance from AP:\n\n";
 
     for (const auto & [key, value] : StaDis)
         std::cout <<"["<<key<<"] , " << value << "\n";
@@ -1314,12 +1319,12 @@ std::cout<<"STA distance from AP:\n\n";
         }
       else{
        for (uint32_t nsta =0 ; nsta < StaNodes.GetN() ; nsta ++){
-     if (t.destinationAddress ==  staInterface.GetAddress (nsta) && t.destinationPort == 10){
-          std::cout <<std::setw(30)<<std::left <<"Flow ID" <<":\t"<<i->first<< " -> DownLink Data stream\n";
-          sum_downlink_delay += avgDelayMicroSPerPkt;
-          sum_downlink_tx_packet += txPackets;
-          sum_downlink_packet_lost += lostPackets;
-          sum_throughput_at_sta += throughputKbps;
+          if (t.destinationAddress ==  staInterface.GetAddress (nsta) && t.destinationPort == 10){
+              std::cout <<std::setw(30)<<std::left <<"Flow ID" <<":\t"<<i->first<< " -> DownLink Data stream\n";
+              sum_downlink_delay += avgDelayMicroSPerPkt;
+              sum_downlink_tx_packet += txPackets;
+              sum_downlink_packet_lost += lostPackets;
+              sum_throughput_at_sta += throughputKbps;
 
       }
       else if (t.sourceAddress ==  staInterface.GetAddress (nsta) && t.sourcePort == 10){

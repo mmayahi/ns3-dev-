@@ -1159,6 +1159,7 @@ WifiMacHeader::Print (std::ostream &os) const
          << ", FragNumber=" << std::hex << (int) m_seqFrag << std::dec << ", SeqNumber=" << m_seqSeq;
       break;
     case WIFI_MAC_DATA:
+    case WIFI_MAC_QOSDATA:
       PrintFrameControl (os);
       os << " Duration/ID=" << m_duration << "us";
       if (!m_ctrlToDs && !m_ctrlFromDs)
@@ -1196,7 +1197,7 @@ WifiMacHeader::Print (std::ostream &os) const
     case WIFI_MAC_DATA_NULL_CFACK:
     case WIFI_MAC_DATA_NULL_CFPOLL:
     case WIFI_MAC_DATA_NULL_CFACK_CFPOLL:
-    case WIFI_MAC_QOSDATA:
+    //case WIFI_MAC_QOSDATA:
     case WIFI_MAC_QOSDATA_CFACK:
     case WIFI_MAC_QOSDATA_CFPOLL:
     case WIFI_MAC_QOSDATA_CFACK_CFPOLL:
