@@ -1001,7 +1001,12 @@ public:
    * \param wifiRadioEnergyModel the wifi radio energy model
    */
   void SetWifiRadioEnergyModel (const Ptr<WifiRadioEnergyModel> wifiRadioEnergyModel);
-
+  /**
+   * Get the wifi radio energy model.
+   *
+   * \param wifiRadioEnergyModel the wifi radio energy model
+   */
+  Ptr<WifiRadioEnergyModel> GetWifiRadioEnergyModel (void) const;
   /**
    * \return the channel width in MHz
    */

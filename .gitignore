@@ -3,3 +3,7 @@ cmake_cache/*
 MU_logs/*
 .lock*
 *.log
+*.pcap
+test01
+test18
+testuplink

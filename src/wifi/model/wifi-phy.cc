@@ -247,6 +247,10 @@ WifiPhy::GetTypeId (void)
                    DoubleValue (100.0), //set to a high value so as to have no effect
                    MakeDoubleAccessor (&WifiPhy::m_powerDensityLimit),
                    MakeDoubleChecker<double> ())
+    .AddAttribute ("WifiRadioEnergyModel", "The energy model associated with this PHY.",
+                  PointerValue (),
+                  MakePointerAccessor (&WifiPhy::m_wifiRadioEnergyModel),
+                  MakePointerChecker<WifiRadioEnergyModel> ())
     .AddTraceSource ("PhyTxBegin",
                      "Trace source indicating a packet "
                      "has begun transmitting over the channel medium",
@@ -336,6 +340,7 @@ WifiPhy::WifiPhy ()
   NS_LOG_FUNCTION (this);
   m_random = CreateObject<UniformRandomVariable> ();
   m_state = CreateObject<WifiPhyStateHelper> ();
+  m_wifiRadioEnergyModel = CreateObject<WifiRadioEnergyModel>();
 }
 
 WifiPhy::~WifiPhy ()
@@ -353,16 +358,18 @@ WifiPhy::DoDispose (void)
     {
       phyEntity.second->CancelAllEvents ();
     }
+  m_wifiRadioEnergyModel = 0;
   m_device = 0;
   m_mobility = 0;
   m_frameCaptureModel = 0;
   m_preambleDetectionModel = 0;
-  m_wifiRadioEnergyModel = 0;
   m_postReceptionErrorModel = 0;
   m_supportedChannelWidthSet.clear ();
   m_random = 0;
   m_state = 0;
   m_currentEvent = 0;
+  m_wifiRadioEnergyModel = CreateObject<WifiRadioEnergyModel>();
+
   for (auto & preambleEvent : m_currentPreambleEvents)
     {
       preambleEvent.second = 0;
@@ -592,6 +599,12 @@ void
 WifiPhy::SetWifiRadioEnergyModel (const Ptr<WifiRadioEnergyModel> wifiRadioEnergyModel)
 {
   m_wifiRadioEnergyModel = wifiRadioEnergyModel;
+}
+
+Ptr<WifiRadioEnergyModel>
+WifiPhy::GetWifiRadioEnergyModel (void) const
+{
+    return m_wifiRadioEnergyModel;
 }
 
 double

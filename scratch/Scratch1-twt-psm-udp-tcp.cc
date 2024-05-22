@@ -53,7 +53,7 @@
 
 //-*********************************
 //#define LOGNAME_PREFIX "WiFiPSM_MU"
-//#define FOLDER_PATH "MU_logs/"
+#define FOLDER_PATH "MU_logs/"
 
 NS_LOG_COMPONENT_DEFINE ("WiFiPSM");
 
@@ -88,7 +88,7 @@ double nextStaTwtSpOffsetDivider = 16;   // K, where nextStaTwtSpOffset = BI / K
 
 //uint32_t dataRatebps_other = 1 * payloadSize*8/dataPeriod;  
 bool enable_throughput_trace = false;
-bool enableEnergyTrace = false;  
+bool enableEnergyTrace = true;  
 bool enablePSM_flag = false;
 //uint32_t PSM_activation_time = 3.0;     // to reproduce the bug please run with " % ./waf --run "scratch/Scratch1-twt-psm-udp-tcp --randSeed=20 --link=2 --power=1 --traffic=3 --udp=0 --StaCount=2" comman
 uint32_t PSM_activation_time = 8.5;
@@ -120,7 +120,7 @@ Time AdvanceWakeupPS = MicroSeconds (10);
 
 uint16_t power{2};             //power save mechanism {1: power save mode, 2: target wake time, 3: active mode}
 
-bool pcapTracing = false;                          /* PCAP Tracing is enabled or not. */
+bool pcapTracing = true;                          /* PCAP Tracing is enabled or not. */
 //-**************************************************************************
 
 // output file for sta throughput 
@@ -133,6 +133,8 @@ bool pcapTracing = false;                          /* PCAP Tracing is enabled or
   std::stringstream enrgy;
 // output file for overhead energy 
   std::stringstream ovrhead_nrg;
+//output file for nodes energy trends
+  std::stringstream energy_trend;
 
   
 static std::map<u_int32_t , double> allTxtime; //all transsmission time
@@ -145,6 +147,9 @@ static std::map<u_int32_t , double> Rxsum; //data reception time
 static std::map<u_int32_t , double> TxsigSum; // signaling transmission time
 static std::map<u_int32_t , double> RxsigSum; // signaling reception time
 static std::map<u_int32_t , double> StaDis; // STAS's distance from the AP
+static std::map<double , double> StaEnr; // STAS's Energy consumption trend
+static std::map<double , double> ApEnr; // Ap's Energy consumption trend
+
 
 // Parse context strings of the form "/NodeList/x/DeviceList/x/..." to extract the NodeId integer
 
@@ -302,11 +307,46 @@ RemainingStaEnergy(double oldValue, double remainingEnergy)
 
 
 void
-TotalStaEnergy(double oldValue, double totalEnergy)
+TotalStaEnergy(std::string context, double oldValue, double totalValue)
 {
-  NS_LOG_UNCOND(Simulator::Now().GetSeconds()
-  << "s Total energy consumed by STA's radio = " << totalEnergy << "J");
+  std::cout << "Time: " <<Simulator::Now().GetSeconds() << "s Total energy consumed by STA's radio = "
+  << context << " - Total energy consumption: " << totalValue << "J" << std::endl;
 }
+
+// Function to print energy consumption every second
+void PrintEnergyConsumption(NodeContainer nodes)
+{
+    double sumEnergy=0;
+    double ApEnergy=0;
+    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+        Ptr<Node> node = nodes.Get(i);
+        Ptr<NetDevice> device = node->GetDevice(0);
+        Ptr<WifiNetDevice> wifiDevice = DynamicCast<WifiNetDevice>(device);
+        if (wifiDevice) {
+            Ptr<WifiPhy> wifiPhy = wifiDevice->GetPhy();
+            if (wifiPhy) {
+                Ptr<WifiRadioEnergyModel> energyModel = wifiPhy->GetWifiRadioEnergyModel();                 
+                if (energyModel) {
+                    double Energy_cons = energyModel->GetTotalEnergyConsumption();
+                    //std::cout << "Time: "<< Simulator::Now().GetSeconds()<< ", Nodeid: "<< i << ", average energy consumption: " << Energy_cons << " Joules" << std::endl; 
+                    if (i == 0){
+                      ApEnergy = Energy_cons;
+                    }
+                    else{
+                      sumEnergy += Energy_cons;
+                    }
+                }
+            }
+        }
+    }
+    sumEnergy = sumEnergy/nodes.GetN();
+    //std::cout << "Time: "<< Simulator::Now().GetSeconds()<< ", average energy consumption: " << sumEnergy << " Joules" << std::endl; 
+    StaEnr[Simulator::Now().GetSeconds()]= sumEnergy;
+    ApEnr[Simulator::Now().GetSeconds()]= ApEnergy;
+    // Schedule the next print event
+    Simulator::Schedule(Seconds(1.0), &PrintEnergyConsumption, nodes);
+}
+
 
 //-*******************************************************************
 
@@ -319,6 +359,9 @@ main (int argc, char *argv[])
 
   ovrhead_nrg <<"ovrhead-nrg.log";
   std::fstream ovr_NRG (ovrhead_nrg.str ().c_str (), std::ios::app);
+
+  energy_trend <<"energy-trend.log";
+  std::fstream NRG_trend (energy_trend.str ().c_str (), std::ios::app);
 
   enrgy <<"nrg.log";
   std::fstream NRG (enrgy.str ().c_str (), std::ios::app);
@@ -508,8 +551,9 @@ main (int argc, char *argv[])
   NodeContainer StaNodes;
   StaNodes.Create (StaCount);
 
-  
-
+  NodeContainer AllNodes;
+  AllNodes.Add(ApNodes);
+  AllNodes.Add(StaNodes);
 
   WifiMacHelper wifiMac_AP;
   WifiMacHelper wifiMac__STA;
@@ -690,7 +734,7 @@ main (int argc, char *argv[])
   // configure energy source
   STASourceHelper.Set("BasicEnergySourceInitialEnergyJ", DoubleValue(3000)); 
   STASourceHelper.Set("BasicEnergySupplyVoltageV", DoubleValue(4.9));
-  STASourceHelper.Set("PeriodicEnergyUpdateInterval", TimeValue(Seconds(2.0)));
+  STASourceHelper.Set("PeriodicEnergyUpdateInterval", TimeValue(Seconds(1.0)));
   // install source
   EnergySourceContainer STAsources = STASourceHelper.Install(StaNodes);
   /* device energy model */
@@ -711,7 +755,7 @@ main (int argc, char *argv[])
   // configure energy source
   APSourceHelper.Set("BasicEnergySourceInitialEnergyJ", DoubleValue(3000)); 
   APSourceHelper.Set("BasicEnergySupplyVoltageV", DoubleValue(12.2));
-  APSourceHelper.Set("PeriodicEnergyUpdateInterval", TimeValue(Seconds(2.0)));
+  APSourceHelper.Set("PeriodicEnergyUpdateInterval", TimeValue(Seconds(1.0)));
   // install source
   EnergySourceContainer APsources = APSourceHelper.Install(apWifiNode);
   /* device energy model */
@@ -769,10 +813,13 @@ main (int argc, char *argv[])
   // On time = payload size in bytes * 8/ data rate = 1434*8/100Mbps = 0.00011472 seconds
   double onTime = (1.0*payloadSize * 8.0/(1.0*uplinkpoissonDataRate)+randTime->GetValue()/200000);
   NS_LOG_UNCOND ("ON time: " << onTime);
+
+
   // Off time nean = (Beacon Interval /nPacketsPerBI) - OnTime
   // double offTimeMean = (beaconInterval.GetMicroSeconds()/(packetCountPerBeaconPeriod*1.0e6)) - onTime; 
   double offTimeMean = abs(((1.0)/(packetsPerSecond*1.0)) - onTime) ; 
   NS_LOG_UNCOND ("Off time mean: " << offTimeMean);
+  //std::cout <<"OFF time: " << offTimeMean <<std::endl;
 
 
   std::ostringstream onTimeStr1, offTimeStr1;
@@ -972,22 +1019,18 @@ main (int argc, char *argv[])
     Config::Connect (PhyTxPsduBeginStr.str(), MakeCallback (&PhyTxPsduBegin));
     Config::Connect (phyRxBeginStr.str(), MakeCallback (&PhyRxPayloadBegin));
   }
- 
+
+
   if (enableEnergyTrace)
   {
     /** connect trace sources **/
     /***************************************************************************/
-    // energy tracing for STA source and Radio
-    Ptr<BasicEnergySource> STASourcePtr = DynamicCast<BasicEnergySource>(STAsources.Get(0));
-    STASourcePtr->TraceConnectWithoutContext("RemainingEnergy", MakeCallback(&RemainingStaEnergy));
-    // device energy model
-    Ptr<DeviceEnergyModel> STARadioModelPtr =
-        STASourcePtr->FindDeviceEnergyModels("ns3::WifiRadioEnergyModel").Get(0);
-    NS_ASSERT(STARadioModelPtr);
-    STARadioModelPtr->TraceConnectWithoutContext("TotalEnergyConsumption",
-                                                   MakeCallback(&TotalStaEnergy));
+    //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/WifiRadioEnergyModel/TotalEnergyConsumption", MakeCallback (&TotalStaEnergy));
+    
+    Simulator::Schedule(Seconds(1.0), &PrintEnergyConsumption, AllNodes);
     /***************************************************************************/
   }
+
   //Simulator::Schedule(Seconds(7.5), &callbackfunctions, wifiHelper);
   // If flowmon is needed
   // FlowMonitor setup
@@ -1174,6 +1217,7 @@ main (int argc, char *argv[])
   average_sta_energy = average_sta_energy/StaCount;
   NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " <<  packetsPerSecond << ", " << StaCount ; for (const auto & [key, value] : StaDis){NRG <<", " << value;} NRG  << ", " << average_sta_energy<< ", " << ap_energy<< std::endl;
   ovr_NRG << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount ; for (const auto & [key, value] : StaDis){ovr_NRG <<", " << value;} ovr_NRG << ", " << sta_ovrhd_energy<< ", " << ap_ovrhd_energy<< std::endl;
+  NRG_trend << link << ", " << power << ", " << traffic << ", " << udp << ", " << packetsPerSecond << ", " << StaCount ; for (const auto & [key, value] : StaDis){NRG_trend <<", " << value;} for (const auto & [key, value] : StaEnr){NRG_trend <<", " <<key <<", " << value;} for (const auto & [key, value] : ApEnr){NRG_trend <<", " <<key <<", " << value;} NRG_trend << std::endl;
 
   allTxtime.clear(); //all transsmission time
   allRxtime.clear(); //all reception time
@@ -1185,4 +1229,6 @@ main (int argc, char *argv[])
   TxsigSum.clear(); //signaling transsmission time
   RxsigSum.clear(); //signaling reception time
   StaDis.clear(); // Node positions
+  ApEnr.clear(); // Ap Energy
+  StaEnr.clear(); // Sta Energy
 }
