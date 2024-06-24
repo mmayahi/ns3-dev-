@@ -206,13 +206,14 @@ switch(state)
 
 void callbackfunctions( WifiHelper wifiHelper)
 {
- // wifiHelper.EnableLogComponents();
- LogComponentEnable ("TcpHeader", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
+ wifiHelper.EnableLogComponents();
+/* LogComponentEnable ("TcpHeader", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  LogComponentEnable ("TcpSocketBase", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  LogComponentEnable ("TcpSocket", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  LogComponentEnable ("TcpL4Protocol", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_ALL));
  LogComponentEnable("TcpCongestionOps", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE |LOG_LEVEL_ALL));
  LogComponentEnable("Socket", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE |LOG_LEVEL_ALL));
+*/
 }
 
 //-**************************************************************************
