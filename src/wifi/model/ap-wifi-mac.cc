@@ -751,13 +751,13 @@ Tim ApWifiMac::GetTim (void) const
   {
     if (m_psUnicastBuffer->GetNPacketsByAddress (sta.second) > 0)
     {
-      if (m_stationManager->GetPSM (sta.second) == false){
-        m_stationManager->SetPSM (sta.second, true);
+     //if (m_stationManager->GetPSM (sta.second) == false){
+     //   m_stationManager->SetPSM (sta.second, true);
       }
 
       // There are buffered packets for this STA
       // Throw assert if this STA is not is PS
-      NS_LOG_UNCOND ("Station " << sta.second << " PSM state: " << m_stationManager->GetPSM(sta.second));
+      //NS_LOG_UNCOND ("Station " << sta.second << " PSM state: " << m_stationManager->GetPSM(sta.second));
       NS_ASSERT (m_stationManager->GetPSM (sta.second) == true);
       if (sta.first <= minAidInBuffer)
       {
